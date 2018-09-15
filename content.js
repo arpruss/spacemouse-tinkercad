@@ -66,6 +66,8 @@ var SpaceNavigator = {
   init: function () {
     
     var this_ = this
+    
+    this.lastMessage = ""
 
     // Movement
     this.position = new THREE.Vector3(0, 0, 0)
@@ -103,10 +105,13 @@ var SpaceNavigator = {
       event.preventDefault()
       this_.scroll -= event.detail * inverScrollFactor
     })
-
-    if (!this.getSpaceNavigator()) {
-      console.warn( 'Space Navigator not found. Connect and press any button to continue.')
-    }
+  },
+  
+  message: function(text) {
+      if (this.lastMessage == text)
+          return
+      new iqwerty.toast.Toast(text)
+      this.lastMessage = text
   },
 
   /**
@@ -247,7 +252,7 @@ var SpaceNavigator = {
     this._updateRotation = function () {
 
       var spaceNavigator = this.getSpaceNavigator()
-
+      
       if (!this.data.lookEnabled || !spaceNavigator) return;
       
       tCurrent = Date.now();
@@ -414,25 +419,31 @@ var SpaceNavigator = {
         return false
       }
 
-      if (this.spaceNavigatorId === undefined) {
+      if (this.spaceNavigatorId === undefined || navigator.getGamepads()[this.spaceNavigatorId] === null ) {
         // find space navigator
         var gamepadList = navigator.getGamepads()
         Object.keys(gamepadList).forEach(function(i){
           var gamepadName = gamepadList[i] ? gamepadList[i].id : null
-          if (gamepadName /* &&
+          if (gamepadName &&
             (
               gamepadName.toLowerCase().indexOf('spacenavigator') > -1
               || gamepadName.toLowerCase().indexOf('space navigator') > -1
               || gamepadName.toLowerCase().indexOf('spacemouse') > -1
               || gamepadName.toLowerCase().indexOf('space mouse') > -1
               || (gamepadName.toLowerCase().indexOf('vendor: 046d') > -1 && gamepadName.toLowerCase().indexOf('product: c6'))
-            ) */
+            ) 
           ) {
             this_.spaceNavigatorId = i
           }
         })
       }
 
+      if (this.spaceNavigatorId === undefined ||  navigator.getGamepads()[this.spaceNavigatorId] === null ) {
+          this.message("SpaceMouse not found. Plug it in and press some buttons.")
+      }
+      else {
+          this.message("SpaceMouse connected.")
+      }
       return navigator.getGamepads()[this.spaceNavigatorId]
 
     }
@@ -577,6 +588,8 @@ var tinkerCADPatch = {
     multiIn: function(property, object) {
         var parts = property.split(".")
         for (var i = 0 ; i < parts.length ; i++) {
+            if (typeof object == "undefined")
+                return false
             if (! (parts[i] in object))
                 return false
             object = object[parts[i]]
@@ -600,7 +613,9 @@ var tinkerCADPatch = {
             setTimeout(_this.init, 500)
             return
         }
-        
+
+        new iqwerty.toast.Toast("SpaceMouse support code injected into TinkerCAD");
+
         _this.prev = {}
         
         _this.controls = new THREE.SpaceNavigatorControls()
