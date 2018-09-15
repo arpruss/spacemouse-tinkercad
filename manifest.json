@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2,
+ 
+  "name": "Use SpaceMouse in TinkerCAD",
+  "version": "0.1.0",
+  "description": "Use HTML5 Gamepad API to access SpaceMouse / SpaceNavigator type devices in TinkerCAD. This script is entirely unofficial and endorsed neither by Autodesk nor by 3DConnexion.",
+ 
+  "content_scripts": [{
+    "js": ["inject.js"],
+    "matches": ["https://www.tinkercad.com/things/*/editv2"]
+  }],
+
+  "web_accessible_resources": [
+    "content.js"
+  ]  
+}
