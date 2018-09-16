@@ -538,24 +538,29 @@ var tinkerCADPatch = {
             
         var controls = _this.controls
         
-        prev.position = cam.position.clone()
-        prev.target = cam.target.clone()
-        prev.up = cam.up.clone()
-        prev.look = cam.target.clone()
-        prev.look.sub(prev.position)
+        prev.position.copy(cam.position)
+        prev.target.copy(cam.target)
+        prev.up.copy(cam.up)
+ 
+        var lookNorm = cam.target.clone()
+        lookNorm.sub(prev.position)
+        prev.distance = lookNorm.length()
+        if (prev.distance>0)
+            lookNorm.multiplyScalar(1/prev.distance)
+        
         var upNorm = prev.up.clone()
         upNorm.normalize()
-        var lookNorm = prev.look.clone()
-        var distance = prev.look.length()
-        controls.data.movementAcceleration = _this.BASE_ACCELERATION * distance/254.6
-        lookNorm.normalize()
+        
         var upCrossLook = upNorm.clone()
         upCrossLook.cross(lookNorm)
+        
         var m = new THREE.Matrix4()
         m.set(upCrossLook.x, upNorm.x, lookNorm.x, 1,
               upCrossLook.y, upNorm.y, lookNorm.y, 1,
               upCrossLook.z, upNorm.z, lookNorm.z, 1,
               0, 0, 0, 1)
+        
+        controls.data.movementAcceleration = _this.BASE_ACCELERATION * prev.distance/254.6
         controls.rotation.setFromRotationMatrix(m)
         controls.position.copy(prev.target)
         
@@ -565,11 +570,9 @@ var tinkerCADPatch = {
     updateToCamera: function(cam) {
         _this = tinkerCADPatch
         cam.target.copy(_this.controls.position)
-        var camPosition = new THREE.Vector3()
-        camPosition.copy(_this.controls.position.copy)
         var look = new THREE.Vector3(0,0,1)
         look.applyQuaternion(_this.controls.rotation)
-        look.multiplyScalar(_this.prev.look.length())
+        look.multiplyScalar(_this.prev.distance)
         cam.position.subVectors(cam.target, look)
         cam.up.set(0,1,0)
         cam.up.applyQuaternion(_this.controls.rotation)
@@ -583,9 +586,9 @@ var tinkerCADPatch = {
         tinkerCADPatch.updateFromCamera(cam)
         tinkerCADPatch.controls.update()
         if (tinkerCADPatch.updateToCamera(cam)) {
-            tinkerCADPatch.prev.position = cam.position.clone()
-            tinkerCADPatch.prev.target = cam.target.clone()
-            tinkerCADPatch.prev.up = cam.up.clone()
+            tinkerCADPatch.prev.position.copy(cam.position)
+            tinkerCADPatch.prev.target.copy(cam.target)
+            tinkerCADPatch.prev.up.copy(cam.up)
             tinkerCADPatch.syncCamera()
         }
     },
@@ -619,10 +622,22 @@ var tinkerCADPatch = {
             return
         }
 
+        _this.prev = { 
+            position: new THREE.Vector3(),
+            look: new THREE.Vector3(),
+            up: new THREE.Vector3(),
+            target: new THREE.Vector3(),
+            lookNorm: new THREE.Vector3(1,0,0),
+            distance: 254.6
+            }        
+        _this.keys = {}
+        _this.old_onkeyup = window.onkeyup
+        _this.old_onkeydown = window.onkeydown
+        window.onkeyup = function(e) { tinkerCADPatch.keys[e.keyCode] = false; return tinkerCADPatch.old_onkeyup(e) }
+        window.onkeydown = function(e) { tinkerCADPatch.keys[e.keyCode] = true; return tinkerCADPatch.old_onkeydown(e) }
+        
         new iqwerty.toast.Toast("SpaceMouse support code injected into TinkerCAD");
 
-        _this.prev = {}
-        
         _this.controls = new THREE.SpaceNavigatorControls()
         _this.controls.init()
         _this.updateFromCamera(_this.getCamera())        
