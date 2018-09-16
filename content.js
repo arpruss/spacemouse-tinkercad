@@ -545,6 +545,7 @@ var tinkerCADPatch = {
     nextMovementTime: -10000,
     FIRST_REPEAT: 500, //250,
     NEXT_REPEAT: 100, // 75,
+    nudging: false,
     
     getCamera: function() {
         return tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.navigation.getCamera()
@@ -641,6 +642,14 @@ var tinkerCADPatch = {
         return new THREE.Vector3(0.5*(minimum[0]+maximum[0]),0.5*(minimum[1]+maximum[1]),0.5*(minimum[2]+maximum[2]))            
     },
     
+    stopNudging: function() {
+        var _this = tinkerCADPatch
+        if (_this.nudging) {
+            tcApp._editor3DContent._editor3D.root.stopRec()
+            _this.nudging = false
+        }        
+    },
+    
     moveModels: function(models) {
         var _this = tinkerCADPatch
         var snap = tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.workplane.snap.value
@@ -651,6 +660,7 @@ var tinkerCADPatch = {
         v = nav.axes[axis]
         if ( Math.abs(v) < (_this.lastModelAxis == axis ? _this.NUDGE_THRESHOLD_OFF : _this.NUDGE_THRESHOLD_ON) ) {
             _this.lastModelAxis = -1
+            _this.stopNudging()
             return
         }
         if (_this.lastModelAxis == axis) {
@@ -666,6 +676,7 @@ var tinkerCADPatch = {
         var s = Math.sign(v)
         var m = new THREE.Matrix4()
 
+        _this.nudging = true
         tcApp._editor3DContent._editor3D.root.rec()
         if (axis < 3) {
             if (axis==1) {
@@ -769,7 +780,6 @@ var tinkerCADPatch = {
                 console.log("pos1",models[i].getPosition())
             }
         }
-        tcApp._editor3DContent._editor3D.root.stopRec()
         tcApp._editor3DContent._editor3DModel.uiLayoutView.selectionBB.update()
     },
 
@@ -781,6 +791,7 @@ var tinkerCADPatch = {
         var rotationOnly = _this.keys[17] || _this.controls.getButton(2) // control
         var selected = _this.getSelectedModels()
         if (_this.ALWAYS_MOVE || movementOnly || rotationOnly || selected.length == 0 || tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.workplane.snap.value == 0) {
+            _this.stopNudging()
             _this.lastModelAxis = -1
             _this.controls.update(updateMovement=!rotationOnly,updateRotation=!movementOnly)
             if (_this.updateToCamera(cam)) {
