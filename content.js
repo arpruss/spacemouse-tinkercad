@@ -703,6 +703,7 @@ var tinkerCADPatch = {
                 models[i].data.applyMatrix(m)
         }            
         else {
+            return;
             var r = new THREE.Matrix4()
             if (axis == 4) {
                 // x to y
