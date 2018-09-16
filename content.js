@@ -55,8 +55,7 @@ var SpaceNavigator = {
     fovSensitivity:       { default: 0.01 },
     fovEasing:            { default: 3 },
     fovAcceleration:      { default: 5 },
-    invertScroll:         { default: false }
-
+    invertScroll:         { default: false }    
   },
 
   /**
@@ -518,6 +517,7 @@ if (window.THREE) {
 
 var tinkerCADPatch = {
     EPS_SQUARED: Math.pow(1e-3,2),
+    BASE_ACCELERATION: 700,
     
     getCamera: function() {
         return tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.navigation.getCamera()
@@ -528,21 +528,26 @@ var tinkerCADPatch = {
     },
     
     updateFromCamera: function(cam) {
-        _this = tinkerCADPatch
+        var _this = tinkerCADPatch
+        var prev = _this.prev
         
-        if (_this.prev.position && cam.position.distanceToSquared( _this.prev.position ) <= _this.EPS_SQUARED &&
-            _this.prev.target && cam.target.distanceToSquared( _this.prev.target ) <= _this.EPS_SQUARED &&
-            _this.prev.up && cam.up.distanceToSquared( _this.prev.up ) > _this.EPS_SQUARED)
+        if (prev.position && cam.position.distanceToSquared( prev.position ) <= _this.EPS_SQUARED &&
+            prev.target && cam.target.distanceToSquared( prev.target ) <= _this.EPS_SQUARED &&
+            prev.up && cam.up.distanceToSquared( prev.up ) > _this.EPS_SQUARED)
             return false;
             
-        _this.prev.position = cam.position.clone()
-        _this.prev.target = cam.target.clone()
-        _this.prev.up = cam.up.clone()
-        _this.prev.look = cam.target.clone()
-        _this.prev.look.sub(_this.prev.position)
-        var upNorm = _this.prev.up.clone()
+        var controls = _this.controls
+        
+        prev.position = cam.position.clone()
+        prev.target = cam.target.clone()
+        prev.up = cam.up.clone()
+        prev.look = cam.target.clone()
+        prev.look.sub(prev.position)
+        var upNorm = prev.up.clone()
         upNorm.normalize()
-        var lookNorm = _this.prev.look.clone()
+        var lookNorm = prev.look.clone()
+        var distance = prev.look.length()
+        controls.data.movementAcceleration = _this.BASE_ACCELERATION * distance/254.6
         lookNorm.normalize()
         var upCrossLook = upNorm.clone()
         upCrossLook.cross(lookNorm)
@@ -551,8 +556,8 @@ var tinkerCADPatch = {
               upCrossLook.y, upNorm.y, lookNorm.y, 1,
               upCrossLook.z, upNorm.z, lookNorm.z, 1,
               0, 0, 0, 1)
-        _this.controls.rotation.setFromRotationMatrix(m)
-        _this.controls.position.copy(_this.prev.target)
+        controls.rotation.setFromRotationMatrix(m)
+        controls.position.copy(prev.target)
         
         return true
     },
