@@ -7,7 +7,7 @@
  
   "content_scripts": [{
     "js": ["inject.js"],
-    "matches": ["https://www.tinkercad.com/things/*/editv2"]
+    "matches": ["https://www.tinkercad.com/things/*/edit*"]
   }],
 
   "web_accessible_resources": [

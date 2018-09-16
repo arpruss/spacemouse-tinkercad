@@ -200,6 +200,19 @@ var SpaceNavigator = {
     }
 
   },
+  
+  getBiggestAxis: function(nav) {
+      var biggest = -1
+      var axis = 0
+      for (var i=0; i<nav.axes.length; i++) {
+          a = Math.abs(nav.axes[i])
+          if (a>biggest) {
+              axis = i
+              biggest = a
+          }
+      }
+      return axis
+  },
 
   getMovementVector: function (dt) {
     if (this._getMovementVector) return this._getMovementVector(dt)
@@ -525,9 +538,25 @@ if (window.THREE) {
 var tinkerCADPatch = {
     EPS_SQUARED: Math.pow(1e-3,2),
     BASE_ACCELERATION: 700,
+    ALWAYS_MOVE: false,
+    lastModelAxis: -1,
+    NUDGE_THRESHOLD_ON: 0.2,
+    NUDGE_THRESHOLD_OFF: 0.15,
+    nextMovementTime: -10000,
+    FIRST_REPEAT: 250,
+    NEXT_REPEAT: 75,
     
     getCamera: function() {
         return tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.navigation.getCamera()
+    },
+    
+    getSelectedModels: function() {
+        var models = tcApp._editor3DContent.models._content
+        selected = []
+        for (p in models) 
+            if (models[p].val.selected.value) 
+                selected.push(models[p].val)
+        return selected
     },
     
     syncCamera: function() {
@@ -562,9 +591,9 @@ var tinkerCADPatch = {
         upCrossLook.cross(lookNorm)
         
         var m = new THREE.Matrix4()
-        m.set(upCrossLook.x, upNorm.x, lookNorm.x, 1,
-              upCrossLook.y, upNorm.y, lookNorm.y, 1,
-              upCrossLook.z, upNorm.z, lookNorm.z, 1,
+        m.set(upCrossLook.x, upNorm.x, lookNorm.x, 0,
+              upCrossLook.y, upNorm.y, lookNorm.y, 0,
+              upCrossLook.z, upNorm.z, lookNorm.z, 0,
               0, 0, 0, 1)
         
         controls.data.movementAcceleration = _this.BASE_ACCELERATION * prev.distance/254.6
@@ -575,7 +604,7 @@ var tinkerCADPatch = {
     },
     
     updateToCamera: function(cam) {
-        _this = tinkerCADPatch
+        var _this = tinkerCADPatch
         cam.target.copy(_this.controls.position)
         var look = new THREE.Vector3(0,0,1)
         look.applyQuaternion(_this.controls.rotation)
@@ -587,19 +616,152 @@ var tinkerCADPatch = {
                cam.target.distanceToSquared(_this.prev.target) >= _this.EPS_SQUARED ||
                cam.up.distanceToSquared(_this.prev.up) >= _this.EPS_SQUARED
     },
+    
+    getCenter: function(models) {
+        if (! models.length)
+            return new THREE.Vector3(0,0,0)
+        var mininum = [Infinity,Infinity,Infinity]
+        var maximum = [-Infinity,Infinity,Infinity]
+        for (var i=0; i<models.length; i++) {
+            for (var j=0; j<models.length; j++) {
+                var c = models[j].geometry.boundingSphere.center.getComponent(j)
+                if (c < minimum[j])
+                    minimum[j] = c
+                if (c > maximum[j])
+                    maximum[j] = c
+            }
+        }
+        return new THREE.Vector3(0.5*(minimum[0]+maximum[0]),0.5*(minimum[1]+maximum[1]),0.5*(minimum[2]+maximum[2]))            
+    },
+    
+    moveModels: function(models) {
+        var _this = tinkerCADPatch
+        var snap = tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.workplane.snap.value
+        var nav = _this.controls.getSpaceNavigator()
+        if (!nav)
+            return 
+        axis = _this.controls.getBiggestAxis(nav)
+        v = nav.axes[axis]
+        if ( Math.abs(v) < (_this.lastModelAxis == axis ? _this.NUDGE_THRESHOLD_OFF : _this.NUDGE_THRESHOLD_ON) ) {
+            _this.lastModelAxis = -1
+            return
+        }
+        if (_this.lastModelAxis == axis) {
+            if (performance.now() < _this.nextMovementTime)
+                return            
+            else
+                _this.nextMovementTime = performance.now() + _this.NEXT_REPEAT
+        }
+        else {
+            _this.nextMovementTime = performance.now() + _this.FIRST_REPEAT
+            _this.lastModelAxis = axis
+        }
+        var s = Math.sign(v)
+        var m = new THREE.Matrix4()
+        if (axis < 3) {
+            if (axis==1) {
+                var testVector = new THREE.Vector3(0,0,1)
+                testVector.applyQuaternion(_this.controls.rotation)
+                if (testVector.y < 0)
+                    s = -s
+                m.set(1, 0, 0, 0,
+                      0, 1, 0, 0,
+                      0, 0, 1, snap * s, 
+                      0, 0, 0, 1)
+            }
+            else {
+                var testVector = new THREE.Vector3()
+                if (axis == 0)
+                    testVector.x = s
+                else
+                    testVector.y = s
+
+                testVector.applyQuaternion(_this.controls.rotation)
+                
+                if (Math.abs(testVector.x) < Math.abs(testVector.y)) {
+                    moveAxis = 1
+                    sign = -Math.sign(testVector.y)
+                }
+                else {
+                    moveAxis = 0
+                    sign = -Math.sign(testVector.x)
+                }
+
+                if (moveAxis == 0)
+                    m.set(1, 0, 0, sign * snap,
+                          0, 1, 0, 0,
+                          0, 0, 1, 0,
+                          0, 0, 0, 1)
+                else
+                    m.set(1, 0, 0, 0,
+                          0, 1, 0, sign * snap,
+                          0, 0, 1, 0,
+                          0, 0, 0, 1)                
+            }
+            
+            for (var i=0;i<models.length;i++)
+                models[i].data.applyMatrix(m)
+        }            
+        else {
+            var r = new THREE.Matrix4()
+            if (axis == 4) {
+                // x to y
+                var testVector = new THREE.Vector3(0,0,1)
+                testVector.applyQuaternion(_this.controls.rotation)
+                if (testVector.y < 0)
+                    s = -s
+                angle = s * Math.PI / 8
+                r.set(Math.cos(angle), -Math.sin(angle), 0, 0,
+                      Math.sin(angle), Math.cos(angle), 0, 0,
+                      0, 0, 1, 0,
+                      0, 0, 0, 1)
+            }
+            else {
+                return // TODO
+            }
+
+            var center = _this.getCenter(models)
+            var centerMatrix = new THREE.Matrix4()
+            centerMatrix.makeTranslation(center.x,center.y,center.z)
+            var modelPosition = new THREE.Vector3()
+            var modelRotation = new THREE.Quaternion()
+            var modelScale = new THREE.Vector3()
+            var modelMatrix = new THREE.Matrix4()            
+            var modelRotationMatrix = new THREE.Matrix4()
+            
+            for (var i=0; i<models.length; i++) {
+                modelMatrix.fromArray(models[i].data.matrix.get())
+                modelMatrix.decompose(modelPosition,modelRotation,modelScale)
+                modelPosition.sub(center)
+                modelMatrix.makeTranslation(modelPosition.x,modelPosition.y,modelPosition.z)
+                modelRotationMatrix.makeRotationFromQuaternion(modelRotation)
+                modelMatrix.multiply(modelRotationMatrix)
+                modelMatrix.multiply(r)
+                modelMatrix.multiply(center)
+                models[i].data.matrix.set(modelMatrix.elements)
+            }
+        }
+    },
 
     update: function() {
-        _this = tinkerCADPatch
+        var _this = tinkerCADPatch
         var cam = tinkerCADPatch.getCamera()
         _this.updateFromCamera(cam)
         var movementOnly = _this.keys[16] || _this.controls.getButton(1) // shift
         var rotationOnly = _this.keys[17] || _this.controls.getButton(2) // control
-        _this.controls.update(updateMovement=!rotationOnly,updateRotation=!movementOnly)
-        if (_this.updateToCamera(cam)) {
-            _this.prev.position.copy(cam.position)
-            _this.prev.target.copy(cam.target)
-            _this.prev.up.copy(cam.up)
-            _this.syncCamera()
+        var selected = _this.getSelectedModels()
+        if (_this.ALWAYS_MOVE || movementOnly || rotationOnly || selected.length == 0 || tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.workplane.snap.value == 0) {
+            _this.lastModelAxis = -1
+            _this.controls.update(updateMovement=!rotationOnly,updateRotation=!movementOnly)
+            if (_this.updateToCamera(cam)) {
+                _this.prev.position.copy(cam.position)
+                _this.prev.target.copy(cam.target)
+                _this.prev.up.copy(cam.up)
+                _this.syncCamera()
+            }
+        }
+        else if (selected.length > 0) {
+            _this.moveModels(selected)
         }
     },
     
@@ -625,7 +787,7 @@ var tinkerCADPatch = {
     },
     
     _init: function() {
-        _this = tinkerCADPatch
+        var _this = tinkerCADPatch
         
         _this.prev = { 
             position: new THREE.Vector3(),
@@ -648,17 +810,18 @@ var tinkerCADPatch = {
         _this.controls.init()
         _this.updateFromCamera(_this.getCamera())        
 
-        setInterval(_this.update, 50)
+        setInterval(_this.update, 33)
     },
 
     init: function() {
-        _this = tinkerCADPatch
+        var _this = tinkerCADPatch
         
         if (!_this.ready()) {
             setTimeout(_this.init, 500)
             return
         }
         
+        // give it a bit more time in case TinkerCAD needs to do more setup
         setTimeout(_this._init, 500)
     }
 }
