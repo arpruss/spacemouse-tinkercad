@@ -543,19 +543,19 @@ var tinkerCADPatch = {
     NUDGE_THRESHOLD_ON: 0.2,
     NUDGE_THRESHOLD_OFF: 0.15,
     nextMovementTime: -10000,
-    FIRST_REPEAT: 250,
-    NEXT_REPEAT: 75,
+    FIRST_REPEAT: 500, //250,
+    NEXT_REPEAT: 100, // 75,
     
     getCamera: function() {
         return tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.navigation.getCamera()
     },
     
     getSelectedModels: function() {
-        var models = tcApp._editor3DContent.models._content
+        var models = tcApp._editor3DContent._editor3DStateMachine.selection.objects._content
+        //tcApp._editor3DContent._editor3DModel.uiLayoutView.selectionModel.selection._content
         selected = []
         for (p in models) 
-            if (models[p].val.selected.value) 
-                selected.push(models[p].val)
+            selected.push(models[p].val)
         return selected
     },
     
@@ -620,15 +620,22 @@ var tinkerCADPatch = {
     getCenter: function(models) {
         if (! models.length)
             return new THREE.Vector3(0,0,0)
-        var mininum = [Infinity,Infinity,Infinity]
-        var maximum = [-Infinity,Infinity,Infinity]
+        var minimum = [Infinity,Infinity,Infinity]
+        var maximum = [-Infinity,-Infinity,-Infinity]
+        var p = new THREE.Vector3()
+        var m = new THREE.Matrix4()
         for (var i=0; i<models.length; i++) {
-            for (var j=0; j<models.length; j++) {
-                var c = models[j].geometry.boundingSphere.center.getComponent(j)
-                if (c < minimum[j])
-                    minimum[j] = c
-                if (c > maximum[j])
-                    maximum[j] = c
+            models[i].geometry.value.computeBoundingSphere()
+            c = models[i].geometry.value.boundingSphere.center
+            p.copy(c)
+            m.fromArray(models[i].data.matrix.get())
+            p.applyMatrix4(m)
+            pp = [p.x,p.y,p.z]
+            for (var j=0; j<3; j++) {
+                if (pp[j] < minimum[j])
+                    minimum[j] = pp[j]
+                if (pp[j] > maximum[j])
+                    maximum[j] = pp[j]
             }
         }
         return new THREE.Vector3(0.5*(minimum[0]+maximum[0]),0.5*(minimum[1]+maximum[1]),0.5*(minimum[2]+maximum[2]))            
@@ -658,6 +665,8 @@ var tinkerCADPatch = {
         }
         var s = Math.sign(v)
         var m = new THREE.Matrix4()
+
+        tcApp._editor3DContent._editor3D.root.rec()
         if (axis < 3) {
             if (axis==1) {
                 var testVector = new THREE.Vector3(0,0,1)
@@ -699,12 +708,12 @@ var tinkerCADPatch = {
                           0, 0, 0, 1)                
             }
             
-            for (var i=0;i<models.length;i++)
-                models[i].data.applyMatrix(m)
+            for (var i=0;i<models.length;i++) {
+                models[i].applyMatrix(m)
+            }
         }            
         else {
-            return;
-            var r = new THREE.Matrix4()
+           var r = new THREE.Matrix4()
             if (axis == 4) {
                 // x to y
                 var testVector = new THREE.Vector3(0,0,1)
@@ -712,36 +721,56 @@ var tinkerCADPatch = {
                 if (testVector.y < 0)
                     s = -s
                 angle = s * Math.PI / 8
-                r.set(Math.cos(angle), -Math.sin(angle), 0, 0,
-                      Math.sin(angle), Math.cos(angle), 0, 0,
-                      0, 0, 1, 0,
-                      0, 0, 0, 1)
+                r.makeRotationZ(angle)
             }
             else {
                 return // TODO
             }
 
+            // todo: cleanup
             var center = _this.getCenter(models)
             var centerMatrix = new THREE.Matrix4()
             centerMatrix.makeTranslation(center.x,center.y,center.z)
+            var ncenterMatrix = new THREE.Matrix4()
+            ncenterMatrix.makeTranslation(-center.x,-center.y,-center.z)
             var modelPosition = new THREE.Vector3()
             var modelRotation = new THREE.Quaternion()
             var modelScale = new THREE.Vector3()
+            var modelScaleMatrix = new THREE.Matrix4()
             var modelMatrix = new THREE.Matrix4()            
             var modelRotationMatrix = new THREE.Matrix4()
             
             for (var i=0; i<models.length; i++) {
-                modelMatrix.fromArray(models[i].data.matrix.get())
+                //modelMatrix.fromArray(models[i].data.matrix.get())
+                models[i].applyMatrix(ncenterMatrix)
+                models[i].applyMatrix(r)
+                models[i].applyMatrix(centerMatrix)
+//                console.log(center)
+//                console.log(ncenterMatrix)
+//                modelMatrix.multiply(r)
+//                modelMatrix.multiply(centerMatrix)
+//                models[i].data.matrix.set(modelMatrix.elements)
+                /*
+                console.log("model0",modelMatrix.elements)
                 modelMatrix.decompose(modelPosition,modelRotation,modelScale)
+                console.log("mp",modelPosition,center)
                 modelPosition.sub(center)
+                console.log(modelPosition)
                 modelMatrix.makeTranslation(modelPosition.x,modelPosition.y,modelPosition.z)
                 modelRotationMatrix.makeRotationFromQuaternion(modelRotation)
                 modelMatrix.multiply(modelRotationMatrix)
                 modelMatrix.multiply(r)
-                modelMatrix.multiply(center)
-                models[i].data.matrix.set(modelMatrix.elements)
+                modelScaleMatrix.makeScale(modelScale.x,modelScale.y,modelScale.z)
+                console.log("scale",modelScale)
+                modelMatrix.multiply(modelScaleMatrix)
+                modelMatrix.multiply(centerMatrix)
+                console.log("model1",modelMatrix) 
+                models[i].data.matrix.set(modelMatrix.elements) */
+                console.log("pos1",models[i].getPosition())
             }
         }
+        tcApp._editor3DContent._editor3D.root.stopRec()
+        tcApp._editor3DContent._editor3DModel.uiLayoutView.selectionBB.update()
     },
 
     update: function() {
