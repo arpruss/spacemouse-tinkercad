@@ -44,7 +44,7 @@ var SpaceNavigator = {
     lookEnabled:          { default: true },
     rollEnabled:          { default: true },
     invertPitch:          { default: false },
-    fovEnabled:           { default: true },
+    fovEnabled:           { default: false },
     fovMin:               { default: 2 },
     fovMax:               { default: 115 },
 
@@ -90,7 +90,7 @@ var SpaceNavigator = {
 
     // time
     this._previousUpdate = performance.now()
-
+    
     // bind scroll events
 
     // IE, Opera, Google Chrome, Safari
@@ -126,13 +126,13 @@ var SpaceNavigator = {
   /**
    * THREE specific: Called on each iteration of main render loop.
    */
-  update: function () {
+  update: function (updateMovement=true,updateRotation=true) {
     var time = performance.now()
     var dt = time - this._previousUpdate
     this._previousUpdate = time
 
-    this.updateRotation(dt)
-    this.updatePosition(dt)
+    if(updateRotation) this.updateRotation(dt)
+    if(updateMovement) this.updatePosition(dt)
     this.updateButtonState()
     if (this.data.fovEnabled) this.updateFov(dt)
   },
@@ -352,6 +352,13 @@ var SpaceNavigator = {
     }
 
     return this._updateFov(dt)
+  },
+  
+  getButton: function(i) {
+    var spaceNavigator = this.getSpaceNavigator();
+    if (! spaceNavigator)
+        return false
+    return spaceNavigator.buttons[i].pressed
   },
 
   /*******************************************************************
@@ -582,14 +589,17 @@ var tinkerCADPatch = {
     },
 
     update: function() {
+        _this = tinkerCADPatch
         var cam = tinkerCADPatch.getCamera()
-        tinkerCADPatch.updateFromCamera(cam)
-        tinkerCADPatch.controls.update()
-        if (tinkerCADPatch.updateToCamera(cam)) {
-            tinkerCADPatch.prev.position.copy(cam.position)
-            tinkerCADPatch.prev.target.copy(cam.target)
-            tinkerCADPatch.prev.up.copy(cam.up)
-            tinkerCADPatch.syncCamera()
+        _this.updateFromCamera(cam)
+        var movementOnly = _this.keys[16] || _this.controls.getButton(1) // shift
+        var rotationOnly = _this.keys[17] || _this.controls.getButton(2) // control
+        _this.controls.update(updateMovement=!rotationOnly,updateRotation=!movementOnly)
+        if (_this.updateToCamera(cam)) {
+            _this.prev.position.copy(cam.position)
+            _this.prev.target.copy(cam.target)
+            _this.prev.up.copy(cam.up)
+            _this.syncCamera()
         }
     },
     
@@ -613,15 +623,10 @@ var tinkerCADPatch = {
             typeof tinkerCADPatch.getCamera() != "undefined"
         return state
     },
-
-    init: function() {
+    
+    _init: function() {
         _this = tinkerCADPatch
         
-        if (!_this.ready()) {
-            setTimeout(_this.init, 500)
-            return
-        }
-
         _this.prev = { 
             position: new THREE.Vector3(),
             look: new THREE.Vector3(),
@@ -630,11 +635,12 @@ var tinkerCADPatch = {
             lookNorm: new THREE.Vector3(1,0,0),
             distance: 254.6
             }        
+            
         _this.keys = {}
         _this.old_onkeyup = window.onkeyup
         _this.old_onkeydown = window.onkeydown
-        window.onkeyup = function(e) { tinkerCADPatch.keys[e.keyCode] = false; return tinkerCADPatch.old_onkeyup(e) }
-        window.onkeydown = function(e) { tinkerCADPatch.keys[e.keyCode] = true; return tinkerCADPatch.old_onkeydown(e) }
+        document.addEventListener('keyup', function(e) { tinkerCADPatch.keys[e.keyCode] = false })
+        document.addEventListener('keydown', function(e) { tinkerCADPatch.keys[e.keyCode] = true })
         
         new iqwerty.toast.Toast("SpaceMouse support code injected into TinkerCAD");
 
@@ -643,6 +649,17 @@ var tinkerCADPatch = {
         _this.updateFromCamera(_this.getCamera())        
 
         setInterval(_this.update, 50)
+    },
+
+    init: function() {
+        _this = tinkerCADPatch
+        
+        if (!_this.ready()) {
+            setTimeout(_this.init, 500)
+            return
+        }
+        
+        setTimeout(_this._init, 500)
     }
 }
 
