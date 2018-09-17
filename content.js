@@ -55,7 +55,8 @@ var SpaceNavigator = {
     fovSensitivity:       { default: 0.01 },
     fovEasing:            { default: 3 },
     fovAcceleration:      { default: 5 },
-    invertScroll:         { default: false }    
+    invertScroll:         { default: false },
+    releaseDebounceCount: { default: 2 },
   },
 
   /**
@@ -83,6 +84,7 @@ var SpaceNavigator = {
 
     // Button state
     this.buttons = {}
+    this.releaseDebounceCount = {}
 
     // scroll wheel
     this.scroll = 0
@@ -368,10 +370,7 @@ var SpaceNavigator = {
   },
   
   getButton: function(i) {
-    var spaceNavigator = this.getSpaceNavigator();
-    if (! spaceNavigator)
-        return false
-    return spaceNavigator.buttons[i].pressed
+    return !!this.buttons[i]
   },
 
   /*******************************************************************
@@ -385,28 +384,34 @@ var SpaceNavigator = {
       // Fire DOM events for button state changes.
       for (var i = 0; i < spaceNavigator.buttons.length; i++) {
         if (spaceNavigator.buttons[i].pressed && !this.buttons[i]) {
-          this.emit(new ButtonEvent('navigatorbuttondown', i, spaceNavigator.buttons[i]));
+            var e = new Event('navigatorbuttondown')
+            e.index = i
+            e.down = true
+            window.dispatchEvent(e)
+            this.buttons[i] = true
+            this.releaseDebounceCount[i] = 0
         } else if (!spaceNavigator.buttons[i].pressed && this.buttons[i]) {
-          this.emit(new ButtonEvent('navigatorbuttonup', i, spaceNavigator.buttons[i]));
+            if (this.releaseDebounceCount[i] >= this.data.releaseDebounceCount) {
+                var e = new Event('navigatorbuttonup')
+                e.index = i
+                e.down = false
+                window.dispatchEvent(e)
+                this.releaseDebounceCount[i] = 0
+                this.buttons[i] = false
+            }
+            else {
+                if (!this.releaseDebounceCount[i])
+                    this.releaseDebounceCount[i] = 1
+                else
+                    this.releaseDebounceCount[i]++
+            }
         }
-        this.buttons[i] = spaceNavigator.buttons[i].pressed;
       }
 
     } else if (Object.keys(this.buttons)) {
       // Reset state if controls are disabled or controller is lost.
       this.buttons = {};
     }
-  },
-
-  emit: function (event) {
-/*        // Emit original event.
-    this.el.emit(event.type, event);
-
-    // Emit convenience event, identifying button index.
-    this.el.emit(
-      event.type + ':' + event.index,
-      new ButtonEvent(event.type, event.index, event)
-    ); */
   },
 
   /*******************************************************************
@@ -647,6 +652,7 @@ var tinkerCADPatch = {
         if (_this.nudging) {
             tcApp._editor3DContent._editor3D.root.stopRec()
             _this.nudging = false
+            tcApp._editor3DContent._editor3DModel.uiLayoutView.selectionBB.update()
         }        
     },
     
@@ -761,43 +767,13 @@ var tinkerCADPatch = {
             centerMatrix.makeTranslation(center.x,center.y,center.z)
             var ncenterMatrix = new THREE.Matrix4()
             ncenterMatrix.makeTranslation(-center.x,-center.y,-center.z)
-            var modelPosition = new THREE.Vector3()
-            var modelRotation = new THREE.Quaternion()
-            var modelScale = new THREE.Vector3()
-            var modelScaleMatrix = new THREE.Matrix4()
-            var modelMatrix = new THREE.Matrix4()            
-            var modelRotationMatrix = new THREE.Matrix4()
             
             for (var i=0; i<models.length; i++) {
-                //modelMatrix.fromArray(models[i].data.matrix.get())
                 models[i].applyMatrix(ncenterMatrix)
                 models[i].applyMatrix(r)
                 models[i].applyMatrix(centerMatrix)
-//                console.log(center)
-//                console.log(ncenterMatrix)
-//                modelMatrix.multiply(r)
-//                modelMatrix.multiply(centerMatrix)
-//                models[i].data.matrix.set(modelMatrix.elements)
-                /*
-                console.log("model0",modelMatrix.elements)
-                modelMatrix.decompose(modelPosition,modelRotation,modelScale)
-                console.log("mp",modelPosition,center)
-                modelPosition.sub(center)
-                console.log(modelPosition)
-                modelMatrix.makeTranslation(modelPosition.x,modelPosition.y,modelPosition.z)
-                modelRotationMatrix.makeRotationFromQuaternion(modelRotation)
-                modelMatrix.multiply(modelRotationMatrix)
-                modelMatrix.multiply(r)
-                modelScaleMatrix.makeScale(modelScale.x,modelScale.y,modelScale.z)
-                console.log("scale",modelScale)
-                modelMatrix.multiply(modelScaleMatrix)
-                modelMatrix.multiply(centerMatrix)
-                console.log("model1",modelMatrix) 
-                models[i].data.matrix.set(modelMatrix.elements) */
-                console.log("pos1",models[i].getPosition())
             }
         }
-        tcApp._editor3DContent._editor3DModel.uiLayoutView.selectionBB.update()
     },
 
     update: function() {
@@ -819,6 +795,7 @@ var tinkerCADPatch = {
             }
         }
         else if (selected.length > 0) {
+            _this.controls.update(updateMovement=false,updateRotation=false)
             _this.moveModels(selected)
         }
     },
@@ -859,8 +836,9 @@ var tinkerCADPatch = {
         _this.keys = {}
         _this.old_onkeyup = window.onkeyup
         _this.old_onkeydown = window.onkeydown
-        document.addEventListener('keyup', function(e) { tinkerCADPatch.keys[e.keyCode] = false })
-        document.addEventListener('keydown', function(e) { tinkerCADPatch.keys[e.keyCode] = true })
+        window.addEventListener('keyup', function(e) { tinkerCADPatch.keys[e.keyCode] = false })
+        window.addEventListener('keydown', function(e) { tinkerCADPatch.keys[e.keyCode] = true })
+        window.addEventListener('navigatorbuttondown', function(e) { if (e.index == 3) tcApp._editor3DContent.fitToView() })
         
         new iqwerty.toast.Toast("SpaceMouse support code injected into TinkerCAD");
 
