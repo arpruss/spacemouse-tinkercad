@@ -540,11 +540,11 @@ var tinkerCADPatch = {
     BASE_ACCELERATION: 700,
     ALWAYS_MOVE: false,
     lastModelAxis: -1,
-    NUDGE_THRESHOLD_ON: 0.2,
-    NUDGE_THRESHOLD_OFF: 0.15,
+    NUDGE_THRESHOLD_ON: 0.3,
+    NUDGE_THRESHOLD_OFF: 0.2,
     nextMovementTime: -10000,
-    FIRST_REPEAT: 500, //250,
-    NEXT_REPEAT: 100, // 75,
+    FIRST_REPEAT: 250,
+    NEXT_REPEAT: 75,
     nudging: false,
     
     getCamera: function() {
@@ -676,8 +676,10 @@ var tinkerCADPatch = {
         var s = Math.sign(v)
         var m = new THREE.Matrix4()
 
-        _this.nudging = true
-        tcApp._editor3DContent._editor3D.root.rec()
+        if (! _this.nudging) {
+            _this.nudging = true
+            tcApp._editor3DContent._editor3D.root.rec()
+        }
         if (axis < 3) {
             if (axis==1) {
                 var testVector = new THREE.Vector3(0,0,1)
@@ -725,17 +727,32 @@ var tinkerCADPatch = {
         }            
         else {
            var r = new THREE.Matrix4()
-            if (axis == 4) {
-                // x to y
+            if (axis == 3) {
+                // x
+                var testVector = new THREE.Vector3(1,0,0)
+                testVector.applyQuaternion(_this.controls.rotation)
+                if (testVector.x < 0)
+                    s = -s
+                var angle = -s * Math.PI / 8
+                r.makeRotationX(angle)
+            }
+            else if (axis == 4) {
+                // z
                 var testVector = new THREE.Vector3(0,0,1)
                 testVector.applyQuaternion(_this.controls.rotation)
                 if (testVector.y < 0)
                     s = -s
-                angle = s * Math.PI / 8
+                var angle = s * Math.PI / 8
                 r.makeRotationZ(angle)
             }
             else {
-                return // TODO
+                // y
+                var testVector = new THREE.Vector3(0,1,0)
+                testVector.applyQuaternion(_this.controls.rotation)
+                if (testVector.y < 0)
+                    s = -s
+                var angle = -s * Math.PI / 8
+                r.makeRotationY(angle)
             }
 
             // todo: cleanup
