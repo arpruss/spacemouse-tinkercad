@@ -184,7 +184,6 @@ var SpaceNavigator = {
       velocity.x += xDelta * acceleration * dt / 1000
       velocity.z += zDelta * acceleration * dt / 1000
       velocity.y -= yDelta * acceleration * dt / 1000
-
     }
 
     var movementVector = this.getMovementVector(dt);
@@ -550,8 +549,9 @@ var tinkerCADPatch = {
     nextMovementTime: -10000,
     FIRST_REPEAT: 250,
     NEXT_REPEAT: 75,
+	FRAME_TIME: 33,
     nudging: false,
-    
+
     getCamera: function() {
         return tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.navigation.getCamera()
     },
@@ -670,7 +670,7 @@ var tinkerCADPatch = {
             return
         }
         if (_this.lastModelAxis == axis) {
-            if (performance.now() < _this.nextMovementTime)
+            if (performance.now() < _this.nextMovementTime || _this.NEXT_REPEAT == 0)
                 return            
             else
                 _this.nextMovementTime = performance.now() + _this.NEXT_REPEAT
@@ -823,7 +823,19 @@ var tinkerCADPatch = {
     
     _init: function() {
         var _this = tinkerCADPatch
-        
+
+		opts = JSON.parse(document.getElementById('tinkerCADPatch_SpaceMouse').getAttribute('data-options'))
+		if (opts.fps != undefined && 1 <= opts.fps && opts.fps <= 120)
+			_this.frameTime = 1000 / opts.fps
+		if (opts.nudgeFirstRepeat != undefined)
+			_this.FIRST_REPEAT = parseFloat(opts.nudgeFirstRepeat)
+		if (opts.nudgeNextRepeat != undefined)
+			_this.NEXT_REPEAT = parseFloat(opts.nudgeNextRepeat)
+		if (opts.nudgeAxis != undefined)
+			_this.NUDGE_THRESHOLD_ON = parseFloat(opts.nudgeAxis)
+		if (opts.nudgeHysteresisRatio != undefined)
+			_this.NUDGE_THRESHOLD_OFF = _this.NUDGE_THRESHOLD_OFF * opts.nudgeHysteresisRatio
+
         _this.prev = { 
             position: new THREE.Vector3(),
             look: new THREE.Vector3(),
@@ -845,8 +857,8 @@ var tinkerCADPatch = {
         _this.controls = new THREE.SpaceNavigatorControls()
         _this.controls.init()
         _this.updateFromCamera(_this.getCamera())        
-
-        setInterval(_this.update, 33)
+		
+        setInterval(_this.update, _this.frameTime)
     },
 
     init: function() {
@@ -856,9 +868,9 @@ var tinkerCADPatch = {
             setTimeout(_this.init, 500)
             return
         }
-        
-        // give it a bit more time in case TinkerCAD needs to do more setup
-        setTimeout(_this._init, 500)
+		
+		// give it a bit more time in case TinkerCAD needs to do more setup
+		setTimeout(_this._init, 500)
     }
 }
 
