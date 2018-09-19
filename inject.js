@@ -17,6 +17,7 @@ body.appendChild(mainScript)
 
 var options = {fps:30, nudgeFirstRepeat:250, nudgeNextRepeat:75,
 	nudgeAxis:0.3,nudgeHysteresisRatio:0.67}
+    
 chrome.storage.local.get(options, function(results){
 	mainScript.setAttribute('data-options', JSON.stringify(results))
 })
