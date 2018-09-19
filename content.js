@@ -286,7 +286,7 @@
 		if (opts.nudgeAxis != undefined)
 			NUDGE_THRESHOLD_ON = parseFloat(opts.nudgeAxis)
 		if (opts.nudgeHysteresisRatio != undefined)
-			NUDGE_THRESHOLD_OFF = NUDGE_THRESHOLD_OFF * opts.nudgeHysteresisRatio
+			NUDGE_THRESHOLD_OFF = NUDGE_THRESHOLD_ON * opts.nudgeHysteresisRatio
 
         last = { 
             position: new THREE.Vector3(),
