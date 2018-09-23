@@ -7,6 +7,8 @@
     var FIRST_REPEAT = 250
     var NEXT_REPEAT = 75
 	var FRAME_TIME = 33
+	var NUDGE_ANGLE = Math.PI / 8
+	var flyMode = false
     
     var lastModelAxis = -1
     var nextMovementTime = -10000
@@ -195,7 +197,7 @@
                 testVector.applyQuaternion(controls.rotation)
                 if (testVector.x < 0)
                     s = -s
-                var angle = -s * Math.PI / 8
+                var angle = -s * NUDGE_ANGLE
                 r.makeRotationX(angle)
             }
             else if (axis == 4) {
@@ -204,7 +206,7 @@
                 testVector.applyQuaternion(controls.rotation)
                 if (testVector.y < 0)
                     s = -s
-                var angle = s * Math.PI / 8
+                var angle = s * NUDGE_ANGLE
                 r.makeRotationZ(angle)
             }
             else {
@@ -213,7 +215,7 @@
                 testVector.applyQuaternion(controls.rotation)
                 if (testVector.y < 0)
                     s = -s
-                var angle = -s * Math.PI / 8
+                var angle = -s * NUDGE_ANGLE
                 r.makeRotationY(angle)
             }
 
@@ -279,7 +281,9 @@
     }
     
     function _init() {
-		opts = JSON.parse(document.getElementById('tinkerCADPatch_SpaceMouse').getAttribute('data-options'))
+        controls = new THREE.SpaceNavigatorControls()
+
+		var opts = JSON.parse(document.getElementById('tinkerCADPatch_SpaceMouse').getAttribute('data-options'))
 		if (opts.fps != undefined && 1 <= opts.fps && opts.fps <= 120)
 			frameTime = 1000 / opts.fps
 		if (opts.nudgeFirstRepeat != undefined)
@@ -290,6 +294,19 @@
 			NUDGE_THRESHOLD_ON = parseFloat(opts.nudgeAxis)
 		if (opts.nudgeHysteresisRatio != undefined)
 			NUDGE_THRESHOLD_OFF = NUDGE_THRESHOLD_ON * opts.nudgeHysteresisRatio
+		if (opts.nudgeAngle != undefined) 
+			NUDGE_ANGLE = opts.nudgeAngle / 180. * Math.PI
+		if (opts.fly) 
+			controls.data.axisMultiply = -1
+		else
+			controls.data.axisMultiply = 1
+		if (opts.swapYZ === undefined || opts.swapYZ) {
+			controls.data.axisMap = [0,2,1,3,5,4]
+		}
+		else {
+			controls.data.axisMap = [0,1,2,3,4,5]
+		}
+		console.log(controls.data.axisMap)
 
         last = { 
             position: new THREE.Vector3(),
@@ -308,7 +325,6 @@
         
         new iqwerty.toast.Toast("SpaceMouse support code injected into TinkerCAD");
 
-        controls = new THREE.SpaceNavigatorControls()
         controls.init()
         updateFromCamera(getCamera())        
 		

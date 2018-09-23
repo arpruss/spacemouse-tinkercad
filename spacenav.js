@@ -57,6 +57,8 @@ var SpaceNavigator = {
     fovAcceleration:      { default: 5 },
     invertScroll:         { default: false },
     releaseDebounceCount: { default: 2 },
+	
+	axisMultiply:     { default: 1 },
   },
 
   /**
@@ -177,9 +179,9 @@ var SpaceNavigator = {
        * 2: - up / + down (pos: Y axis pointing down)
        */
 
-      var xDelta = spaceNavigator.axes[0],
-          yDelta = -spaceNavigator.axes[2],
-          zDelta = spaceNavigator.axes[1]
+      var xDelta = this.data.axisMultiply * spaceNavigator.axes[this.data.axisMap[0]],
+          yDelta = this.data.axisMultiply * - spaceNavigator.axes[this.data.axisMap[1]],
+          zDelta = this.data.axisMultiply *  spaceNavigator.axes[this.data.axisMap[2]]
           
       velocity.x += xDelta * acceleration * dt / 1000
       velocity.z += zDelta * acceleration * dt / 1000
@@ -301,7 +303,9 @@ var SpaceNavigator = {
        * 5: - yaw right / + yaw left (rot: Y axis clock wise)
        */
 
-      var delta = new THREE.Vector3(spaceNavigator.axes[3], spaceNavigator.axes[5], spaceNavigator.axes[4])
+      var delta = new THREE.Vector3(this.data.axisMultiply * spaceNavigator.axes[this.data.axisMap[3]], 
+							this.data.axisMultiply * spaceNavigator.axes[this.data.axisMap[4]], 
+							this.data.axisMultiply * spaceNavigator.axes[this.data.axisMap[5]])
 
       //console.log(delta)
       if (delta.x < ROTATION_EPS && delta.x > -ROTATION_EPS) delta.z = 0
@@ -461,13 +465,14 @@ var SpaceNavigator = {
         })
       }
 
-      if (this.spaceNavigatorId === undefined ||  navigator.getGamepads()[this.spaceNavigatorId] === null ) {
+	  var nav
+      if (this.spaceNavigatorId === undefined || (nav = navigator.getGamepads()[this.spaceNavigatorId]) === null ) {
           this.message("SpaceMouse not found. Plug it in and press some buttons.")
+		  return undefined
       }
-      else {
-          this.message("SpaceMouse connected.")
-      }
-      return navigator.getGamepads()[this.spaceNavigatorId]
+	  this.message("SpaceMouse connected.")
+	  
+      return nav
 
     }
   },

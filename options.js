@@ -1,5 +1,5 @@
-var options = {fps:30, nudgeFirstRepeat:250, nudgeNextRepeat:75,
-	nudgeAxis:0.3,nudgeHysteresisRatio:0.67}
+var options = {fps:30, nudgeAngle:22.5, nudgeFirstRepeat:250, nudgeNextRepeat:75,
+	nudgeAxis:0.3, nudgeHysteresisRatio:0.67, fly:false, swapYZ:true}
 	
 var storage = chrome.storage.local
 var changed = false
@@ -8,7 +8,10 @@ function loadOptions() {
 	storage.get(options, function(result) {
 		for (key in options) {
 			console.log("loaded",key,result[key])
-			document.getElementById(key).value = result[key]
+			if (document.getElementById(key).type == 'checkbox')
+				document.getElementById(key).checked = result[key]
+			else
+				document.getElementById(key).value = result[key]
 		}
 	})
 }
@@ -27,7 +30,9 @@ function saveOptions() {
 	var out = {}
 	for (var key in options) {
 		var opt = document.getElementById(key)
-        if (opt.type == 'number')
+		if (opt.type == 'checkbox')
+			out[key] = opt.checked
+        else if (opt.type == 'number')
             out[key] = clamp(opt.value,opt.min,opt.max)
         else
             out[key] = opt.value
@@ -36,6 +41,7 @@ function saveOptions() {
         document.getElementById('save').disabled = true
         changed = false
         loadOptions()
+		document.getElementById('message').innerHTML = 'Refresh TinkerCAD to use new settings.'
     }
     )	
 }

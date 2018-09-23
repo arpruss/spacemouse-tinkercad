@@ -15,8 +15,8 @@ mainScript.setAttribute('src', chrome.extension.getURL('content.js'))
 mainScript.setAttribute('id', 'tinkerCADPatch_SpaceMouse')
 body.appendChild(mainScript)
 
-var options = {fps:30, nudgeFirstRepeat:250, nudgeNextRepeat:75,
-	nudgeAxis:0.3,nudgeHysteresisRatio:0.67}
+var options = {fps:30, nudgeAngle:22.5, nudgeFirstRepeat:250, nudgeNextRepeat:75,
+	nudgeAxis:0.3, nudgeHysteresisRatio:0.67, fly:false, swapYZ:true}
     
 chrome.storage.local.get(options, function(results){
 	mainScript.setAttribute('data-options', JSON.stringify(results))
