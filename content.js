@@ -14,6 +14,7 @@
     var last = {}
     var keys = {}
     var controls
+	var focused = true
 
     function getCamera() {
         return tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.navigation.getCamera()
@@ -232,6 +233,8 @@
     }
 
     function update() {
+		if (! focused)
+			return
         var cam = getCamera()
         updateFromCamera(cam)
         var movementOnly = keys[16] || controls.getButton(1) // shift
@@ -297,6 +300,8 @@
             distance: 254.6
         }        
             
+        window.onblur = function(e) { focused = false }
+        window.onfocus = function(e) { focused = true }
         window.addEventListener('keyup', function(e) { keys[e.keyCode] = false })
         window.addEventListener('keydown', function(e) { keys[e.keyCode] = true })
         window.addEventListener('navigatorbuttondown', function(e) { if (e.index == 3) tcApp._editor3DContent.fitToView() })
