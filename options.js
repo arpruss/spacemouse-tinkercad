@@ -1,5 +1,6 @@
 var options = {fps:30, nudgeAngle:22.5, nudgeFirstRepeat:250, nudgeNextRepeat:75,
-	nudgeAxis:0.3, nudgeHysteresisRatio:0.67, fly:false, swapYZ:false}
+	nudgeAxis:0.3, nudgeHysteresisRatio:0.67, fly:false, swapYZ:false, navSelection:"3",
+	navRotationally:"2", navPositionally:"1", fit:"4", home:"5", fineNudge:"9"}
 	
 var storage = chrome.storage.local
 var changed = false
@@ -8,10 +9,13 @@ function loadOptions() {
 	storage.get(options, function(result) {
 		for (key in options) {
 			console.log("loaded",key,result[key])
-			if (document.getElementById(key).type == 'checkbox')
-				document.getElementById(key).checked = result[key]
+			var e = document.getElementById(key)
+			if (e.tagName == 'SELECT')
+				e.value = result[key]
+			if (e.type == 'checkbox')
+				e.checked = result[key]
 			else
-				document.getElementById(key).value = result[key]
+				e.value = result[key]
 		}
 	})
 }

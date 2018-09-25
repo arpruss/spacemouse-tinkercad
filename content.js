@@ -9,6 +9,12 @@
 	var FRAME_TIME = 33
 	var NUDGE_ANGLE = Math.PI / 8
 	var flyMode = false
+	var navigateRotationally = "2"
+	var navigatePositionally = "1"
+	var navigateSelection = "3"
+	var home = "5"
+	var fit = "4"
+	var fineRotation = "9"
     
     var lastModelAxis = -1
     var nextMovementTime = -10000
@@ -17,6 +23,24 @@
     var keys = {}
     var controls
 	var focused = true
+	
+	function checkControl(c) {
+		if (c == "none")
+			return false
+		else if (! isNaN(c)) 
+			return controls.getButton(parseInt(c))
+		else 
+			return false // TODO: handle common keys
+	}
+
+	function checkControlButton(c,i) {
+		if (c == "none")
+			return false
+		else if (! isNaN(c)) 
+			return parseInt(c) == i
+		else 
+			return false // TODO: handle common keys
+	}
 
     function getCamera() {
         return tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.navigation.getCamera()
@@ -117,6 +141,17 @@
     
     function moveModels(models) {
         var snap = tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.workplane.snap.value
+		if (snap == 0)
+			snap = 0.1		
+		var nudgeAngle = NUDGE_ANGLE
+		if (checkControl(fineNudge)) {			
+			snap /= 10
+			if (nudgeAngle <= 1)
+				nudgeAngle /= 10
+			else
+				nudgeAngle = 1
+		}
+		
         var nav = controls.getSpaceNavigator()
         if (!nav)
             return 
@@ -197,7 +232,7 @@
                 testVector.applyQuaternion(controls.rotation)
                 if (testVector.x < 0)
                     s = -s
-                var angle = -s * NUDGE_ANGLE
+                var angle = -s * nudgeAngle
                 r.makeRotationX(angle)
             }
             else if (axis == 4) {
@@ -206,7 +241,7 @@
                 testVector.applyQuaternion(controls.rotation)
                 if (testVector.y < 0)
                     s = -s
-                var angle = s * NUDGE_ANGLE
+                var angle = s * nudgeAngle
                 r.makeRotationZ(angle)
             }
             else {
@@ -215,7 +250,7 @@
                 testVector.applyQuaternion(controls.rotation)
                 if (testVector.y < 0)
                     s = -s
-                var angle = -s * NUDGE_ANGLE
+                var angle = -s * nudgeAngle
                 r.makeRotationY(angle)
             }
 
@@ -239,11 +274,11 @@
 			return
         var cam = getCamera()
         updateFromCamera(cam)
-        var movementOnly = keys[16] || controls.getButton(1) // shift
-        var rotationOnly = keys[17] || controls.getButton(2) // control
-		var allowMove = controls.getButton(4) // always move
+        var movementOnly = keys[16] || checkControl(navigatePositionally) // shift
+        var rotationOnly = keys[17] || checkControl(navigateRotationally) // control
+		var allowMove = checkControl(navigateSelection)  // always move
         var selected = getSelectedModels()
-        if (ALWAYS_MOVE || allowMove || movementOnly || rotationOnly || selected.length == 0 || tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.workplane.snap.value == 0) {
+        if (ALWAYS_MOVE || allowMove || movementOnly || rotationOnly || selected.length == 0) {
             stopNudging()
             lastModelAxis = -1
             controls.update(updateMovement=!rotationOnly,updateRotation=!movementOnly)
@@ -307,6 +342,18 @@
 		else {
 			controls.data.axisMap = [0,1,2,3,4,5]
 		}
+		if (opts.navPositionally != undefined)
+			navigatePositionally = opts.navPositionally
+		if (opts.navRotationally != undefined)
+			navigateRotationally = opts.navRotationally
+		if (opts.navSelection != undefined)
+			navigateSelection = opts.navSelection
+		if (opts.fineNudge != undefined)
+			fineNudge = opts.fineNudge
+		if (opts.fit != undefined)
+			fit = opts.fit
+		if (opts.home != undefined)
+			home = opts.home
 		console.log(controls.data.axisMap)
 
         last = { 
@@ -322,7 +369,10 @@
         window.onfocus = function(e) { focused = true }
         document.addEventListener('keyup', function(e) { keys[e.keyCode] = false })
         document.addEventListener('keydown', function(e) { keys[e.keyCode] = true })
-        window.addEventListener('navigatorbuttondown', function(e) { if (e.index == 3) tcApp._editor3DContent.fitToView() })
+        window.addEventListener('navigatorbuttondown', function(e) { 
+			if (checkControlButton(fit, e.index)) tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.fitView()
+			else if (checkControlButton(home, e.index)) tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.goHomeView()
+		})
         
         new iqwerty.toast.Toast("SpaceMouse support code injected into TinkerCAD");
 
