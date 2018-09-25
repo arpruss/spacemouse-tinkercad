@@ -56,9 +56,9 @@ var SpaceNavigator = {
     fovEasing:            { default: 3 },
     fovAcceleration:      { default: 5 },
     invertScroll:         { default: false },
-    releaseDebounceCount: { default: 2 },
+    releaseDebounceCount: { default: 10 },
 	
-	axisMultiply:     { default: 1 },
+	axisMultiply:     { default: [1,1,1,1,1,1] },
   },
 
   /**
@@ -179,9 +179,9 @@ var SpaceNavigator = {
        * 2: - up / + down (pos: Y axis pointing down)
        */
 
-      var xDelta = this.data.axisMultiply * spaceNavigator.axes[this.data.axisMap[0]],
-          yDelta = this.data.axisMultiply * - spaceNavigator.axes[this.data.axisMap[1]],
-          zDelta = this.data.axisMultiply *  spaceNavigator.axes[this.data.axisMap[2]]
+      var xDelta = this.data.axisMultiply[0] * spaceNavigator.axes[this.data.axisMap[0]],
+          yDelta = this.data.axisMultiply[1] * - spaceNavigator.axes[this.data.axisMap[1]],
+          zDelta = this.data.axisMultiply[2] *  spaceNavigator.axes[this.data.axisMap[2]]
           
       velocity.x += xDelta * acceleration * dt / 1000
       velocity.z += zDelta * acceleration * dt / 1000
@@ -303,9 +303,9 @@ var SpaceNavigator = {
        * 5: - yaw right / + yaw left (rot: Y axis clock wise)
        */
 
-      var delta = new THREE.Vector3(this.data.axisMultiply * spaceNavigator.axes[this.data.axisMap[3]], 
-							this.data.axisMultiply * spaceNavigator.axes[this.data.axisMap[4]], 
-							this.data.axisMultiply * spaceNavigator.axes[this.data.axisMap[5]])
+      var delta = new THREE.Vector3(this.data.axisMultiply[3] * spaceNavigator.axes[this.data.axisMap[3]], 
+							this.data.axisMultiply[4] * spaceNavigator.axes[this.data.axisMap[4]], 
+							this.data.axisMultiply[5] * spaceNavigator.axes[this.data.axisMap[5]])
 
       //console.log(delta)
       if (delta.x < ROTATION_EPS && delta.x > -ROTATION_EPS) delta.z = 0
@@ -386,13 +386,15 @@ var SpaceNavigator = {
 
       // Fire DOM events for button state changes.
       for (var i = 0; i < spaceNavigator.buttons.length; i++) {
-        if (spaceNavigator.buttons[i].pressed && !this.buttons[i]) {
-            var e = new Event('navigatorbuttondown')
-            e.index = i
-            e.down = true
-            window.dispatchEvent(e)
-            this.buttons[i] = true
-            this.releaseDebounceCount[i] = 0
+        if (spaceNavigator.buttons[i].pressed) {
+			this.releaseDebounceCount[i] = 0
+			if (!this.buttons[i]) {
+				var e = new Event('navigatorbuttondown')
+				e.index = i
+				e.down = true
+				window.dispatchEvent(e)
+				this.buttons[i] = true
+			}
         } else if (!spaceNavigator.buttons[i].pressed && this.buttons[i]) {
             if (this.releaseDebounceCount[i] >= this.data.releaseDebounceCount) {
                 var e = new Event('navigatorbuttonup')

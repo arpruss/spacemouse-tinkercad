@@ -241,8 +241,9 @@
         updateFromCamera(cam)
         var movementOnly = keys[16] || controls.getButton(1) // shift
         var rotationOnly = keys[17] || controls.getButton(2) // control
+		var allowMove = controls.getButton(4) // always move
         var selected = getSelectedModels()
-        if (ALWAYS_MOVE || movementOnly || rotationOnly || selected.length == 0 || tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.workplane.snap.value == 0) {
+        if (ALWAYS_MOVE || allowMove || movementOnly || rotationOnly || selected.length == 0 || tcApp._editor3DContent._editor3DModel.submodel._content.Navigating.val.workplane.snap.value == 0) {
             stopNudging()
             lastModelAxis = -1
             controls.update(updateMovement=!rotationOnly,updateRotation=!movementOnly)
@@ -297,9 +298,9 @@
 		if (opts.nudgeAngle != undefined) 
 			NUDGE_ANGLE = opts.nudgeAngle / 180. * Math.PI
 		if (opts.fly) 
-			controls.data.axisMultiply = -1
+			controls.data.axisMultiply = [-1,1,-1,-1,-1,-1]
 		else
-			controls.data.axisMultiply = 1
+			controls.data.axisMultiply = [1,1,1,1,1,1]
 		if (opts.swapYZ === undefined || opts.swapYZ) {
 			controls.data.axisMap = [0,2,1,3,5,4]
 		}
@@ -319,8 +320,8 @@
             
         window.onblur = function(e) { focused = false }
         window.onfocus = function(e) { focused = true }
-        window.addEventListener('keyup', function(e) { keys[e.keyCode] = false })
-        window.addEventListener('keydown', function(e) { keys[e.keyCode] = true })
+        document.addEventListener('keyup', function(e) { keys[e.keyCode] = false })
+        document.addEventListener('keydown', function(e) { keys[e.keyCode] = true })
         window.addEventListener('navigatorbuttondown', function(e) { if (e.index == 3) tcApp._editor3DContent.fitToView() })
         
         new iqwerty.toast.Toast("SpaceMouse support code injected into TinkerCAD");
