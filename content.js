@@ -361,7 +361,10 @@
 			fit = opts.fit
 		if (opts.home != undefined)
 			home = opts.home
-		console.log(controls.data.axisMap)
+		if (opts.rotationSpeedMultiplier != undefined) {
+			controls.data.rotationSensitivity = 0.05 * opts.rotationSpeedMultiplier
+			controls.data.maxRotationSensitivity = 1.00 * opts.rotationSpeedMultiplier
+		}
 
         last = { 
             position: new THREE.Vector3(),

@@ -51,7 +51,7 @@ var SpaceNavigator = {
 	requiredDominationRatio: { default: 0 },
 
     // Constants
-    maxRotationSensitivity:  { default: 0.20 },
+    maxRotationSensitivity:  { default: 1 },
     rotationSensitivity:  { default: 0.05 },
     movementEasing:       { default: 3 },
     movementAcceleration: { default: 700 },
