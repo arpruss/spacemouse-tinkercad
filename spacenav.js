@@ -48,11 +48,10 @@ var SpaceNavigator = {
     fovMin:               { default: 2 },
     fovMax:               { default: 115 },
 	dominantAxis:		  { default: false },
-	requiredDominationRatio: { default: 0 },
+	requiredDominationAngle: { default: 90 },
 
     // Constants
-    maxRotationSensitivity:  { default: 1 },
-    rotationSensitivity:  { default: 0.05 },
+    rotationSensitivity:  { default: 1.5 },
     movementEasing:       { default: 3 },
     movementAcceleration: { default: 700 },
     fovSensitivity:       { default: 0.01 },
@@ -82,6 +81,7 @@ var SpaceNavigator = {
 
     // Rotation
     this.rotation = new THREE.Quaternion()
+	this.dominationRatioSquared = this.data.requiredDominationAngle >= 90 ? 0 : Math.cos(DEG_TO_RAD * this.data.requiredDominationAngle)
     
     // FOV
     this.fov = DEFAULT_FOV
@@ -120,11 +120,12 @@ var SpaceNavigator = {
       this.lastMessage = text
   },
   
-  dominateAxis(spaceNavigator) {
-	  var d = this.getDominantAxis(spaceNavigator.axes)
-	  for (var i=0;i<spaceNavigator.axes.length; i++)
-		  if (i != d)
-			  spaceNavigator.axes[i] = 0	  
+  dominateAxis(axes) {
+	  var d = this.getDominantAxis(axes)
+	  var newAxes = [0,0,0,0,0,0]
+	  if (d >= 0)
+		  newAxes[d] = axes[d]
+	  return newAxes 
   },
 
   /**
@@ -134,11 +135,12 @@ var SpaceNavigator = {
     var spaceNavigator = this.getSpaceNavigator()
 	
 	if (spaceNavigator) {
-		if (this.dominantAxis) {
-			this.dominateAxis(spaceNavigator)
+		var axes = spaceNavigator.axes
+		if (this.data.dominantAxis) {
+			axes = this.dominateAxis(axes)
 		}
-		this.updateRotation(dt,spaceNavigator)
-		this.updatePosition(dt,spaceNavigator)
+		this.updateRotation(dt,axes)
+		this.updatePosition(dt,axes)
 		this.updateButtonState(spaceNavigator)
 	}
     if (this.data.fovEnabled) this.updateFov(dt)
@@ -158,13 +160,12 @@ var SpaceNavigator = {
    * Movement
    */
 
-  updatePosition: function (dt) {
+  updatePosition: function (dt, axes) {
     var data = this.data
     var acceleration = data.movementAcceleration
     var easing = data.movementEasing
     var velocity = this.movementVelocity
     var el = this.el
-    var spaceNavigator = this.getSpaceNavigator()
 
     // If data has changed or FPS is too low
     // we reset the velocity
@@ -181,7 +182,7 @@ var SpaceNavigator = {
 
     var position = el ? el.getAttribute('position') : this.position
 
-    if (data.enabled && data.movementEnabled && spaceNavigator) {
+    if (data.enabled && data.movementEnabled) {
 
       /*
        * 3dconnexion space navigator position axes
@@ -192,9 +193,9 @@ var SpaceNavigator = {
        * 2: - up / + down (pos: Y axis pointing down)
        */
 
-      var xDelta = this.data.axisMultiply[0] * spaceNavigator.axes[this.data.axisMap[0]],
-          yDelta = this.data.axisMultiply[1] * - spaceNavigator.axes[this.data.axisMap[1]],
-          zDelta = this.data.axisMultiply[2] *  spaceNavigator.axes[this.data.axisMap[2]]
+      var xDelta = this.data.axisMultiply[0] * axes[this.data.axisMap[0]],
+          yDelta = this.data.axisMultiply[1] * -axes[this.data.axisMap[1]],
+          zDelta = this.data.axisMultiply[2] * axes[this.data.axisMap[2]]
           
       velocity.x += xDelta * acceleration * dt / 1000
       velocity.z += zDelta * acceleration * dt / 1000
@@ -217,22 +218,22 @@ var SpaceNavigator = {
 
   },
   
-  getDominantAxis: function(nav) {
+  getDominantAxis: function(axes) {
       var biggest = -100
       var axis = 0
-      for (var i=0; i<nav.axes.length; i++) {
-          a = Math.abs(nav.axes[i])
+      for (var i=0; i<axes.length; i++) {
+          a = Math.abs(axes[i])
           if (a>biggest) {
               axis = i
               biggest = a
           }
       }
-	  if (this.requiredDominationRatio>0) {
+	  if (this.dominationRatioSquared>0) {
 		  t = 0;
-		  for (var i=0; i<nav.axes.length; i++) {
-			t += nav.axes[i]*nav.axes[i]
+		  for (var i=0; i<axes.length; i++) {
+			t += axes[i]*axes[i]
 		  }
-		  if (t * this.requiredDominationRatio*this.requiredDominationRatio <= nav.axes[axis]*nav.axes[axis]) {
+		  if (t * this.dominationRatioSquared <= axes[axis]*axes[axis]) {
 			  return axis
 		  }
 		  else {
@@ -277,8 +278,8 @@ var SpaceNavigator = {
    * Rotation
    */
 
-  updateRotation: function (dt,spaceNavigator) {
-    if (this._updateRotation) return this._updateRotation();
+  updateRotation: function (dt,axes) {
+    if (this._updateRotation) return this._updateRotation(dt,axes);
 
     var initialRotation = new THREE.Quaternion(),
         prevInitialRotation = new THREE.Quaternion(),
@@ -291,7 +292,7 @@ var SpaceNavigator = {
     var rotationEps = 0.0001,
         debounce = 500;
 
-    this._updateRotation = function () {
+    this._updateRotation = function (dt,axes) {
 
       if (!this.data.lookEnabled) return;
       
@@ -328,11 +329,11 @@ var SpaceNavigator = {
        * 5: - yaw right / + yaw left (rot: Y axis clock wise)
        */
 
-      var delta = new THREE.Vector3(this.data.axisMultiply[3] * spaceNavigator.axes[this.data.axisMap[3]], 
-							this.data.axisMultiply[4] * spaceNavigator.axes[this.data.axisMap[4]], 
-							this.data.axisMultiply[5] * spaceNavigator.axes[this.data.axisMap[5]])
+      var delta = new THREE.Vector3(this.data.axisMultiply[3] * axes[this.data.axisMap[3]], 
+							this.data.axisMultiply[4] * axes[this.data.axisMap[4]], 
+							this.data.axisMultiply[5] * axes[this.data.axisMap[5]])
 
-      //console.log(delta)
+
       if (delta.x < ROTATION_EPS && delta.x > -ROTATION_EPS) delta.z = 0
       if (delta.y < ROTATION_EPS && delta.y > -ROTATION_EPS) delta.y = 0
       if (delta.z < ROTATION_EPS && delta.z > -ROTATION_EPS) delta.x = 0
@@ -345,7 +346,7 @@ var SpaceNavigator = {
       // and spaceNavigator hasn't moved, don't overwrite the existing rotation.
       if (tLastExternalActivity > tLastLocalActivity && !delta.lengthSq()) return
 
-      delta.multiplyScalar(Math.min(this.data.maxRotationSensitivity,this.data.rotationSensitivity * dt * 30))
+      delta.multiplyScalar(this.data.rotationSensitivity * Math.min(dt,1000) / 1000)
 
       var q = new THREE.Quaternion()
       q.setFromEuler(new THREE.Euler(delta.x,delta.y,delta.z))
@@ -362,7 +363,7 @@ var SpaceNavigator = {
       tLastLocalActivity = tCurrent;
     };
 
-    return this._updateRotation();
+    return this._updateRotation(dt,axes);
   },
 
   updateFov: function (dt) {
@@ -473,10 +474,12 @@ var SpaceNavigator = {
         return false
       }
 
-      if (this.spaceNavigatorId === undefined || navigator.getGamepads()[this.spaceNavigatorId] === null ) {
+	  var nav = navigator.getGamepads()[this.spaceNavigatorId]
+	  
+      if (nav === undefined) {
         // find space navigator
         var gamepadList = navigator.getGamepads()
-        Object.keys(gamepadList).forEach(function(i){
+		for (var i = 0 ; i < gamepadList.length ; i++) {
           var gamepadName = gamepadList[i] ? gamepadList[i].id : null
           if (gamepadName &&
             (
@@ -487,20 +490,21 @@ var SpaceNavigator = {
               || (gamepadName.toLowerCase().indexOf('vendor: 046d') > -1 && gamepadName.toLowerCase().indexOf('product: c6'))
             ) 
           ) {
-            this_.spaceNavigatorId = i
+            this.spaceNavigatorId = i
+			nav = gamepadList[i]
+			break
           }
-        })
+        }
       }
 
-	  var nav
-      if (this.spaceNavigatorId === undefined || (nav = navigator.getGamepads()[this.spaceNavigatorId]) === null ) {
+      if (! nav) {
+		  this.spaceNavigatorId = undefined
           this.message("SpaceMouse not found. Plug it in and press some buttons.")
 		  return undefined
       }
 	  this.message("SpaceMouse connected.")
 	  
       return nav
-
     }
   },
 

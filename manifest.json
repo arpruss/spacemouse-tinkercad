@@ -7,7 +7,7 @@
   
   "options_ui": {
     "page": "options.html",
-    "open_in_tab": true
+    "open_in_tab": false
   },
 
   "icons": { "16": "icon16.png",

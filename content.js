@@ -155,7 +155,7 @@
         var nav = controls.getSpaceNavigator()
         if (!nav)
             return 
-        axis = controls.getDominantAxis(nav)
+        axis = controls.getDominantAxis(nav.axes)
 		if (axis < 0) {
             lastModelAxis = -1
             stopNudging()
@@ -361,10 +361,14 @@
 			fit = opts.fit
 		if (opts.home != undefined)
 			home = opts.home
-		if (opts.rotationSpeedMultiplier != undefined) {
-			controls.data.rotationSensitivity = 0.05 * opts.rotationSpeedMultiplier
-			controls.data.maxRotationSensitivity = 1.00 * opts.rotationSpeedMultiplier
-		}
+		if (opts.rotationSpeedMultiplier != undefined) 
+			controls.data.rotationSensitivity = 1.5 * opts.rotationSpeedMultiplier
+		if (opts.dominantAxis != undefined)
+			controls.data.dominantAxis = opts.dominantAxis
+		console.log(opts)
+		console.log(controls.data.dominantAxis)
+		if (opts.requiredDominationAngle != undefined)
+			controls.data.requiredDominationAngle = opts.requiredDominationAngle
 
         last = { 
             position: new THREE.Vector3(),

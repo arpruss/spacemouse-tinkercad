@@ -69,6 +69,8 @@ document.getElementById('save').addEventListener('click',
 document.getElementById('defaults').addEventListener('click',
     defaults)
 for (var key in options) {
+	console.log(key)
+	console.log(document.getElementById(key))
     document.getElementById(key).addEventListener('change', function() { change() })
     document.getElementById(key).addEventListener('keyup', function() { change() })
     document.getElementById(key).addEventListener('paste', function() { change() })
