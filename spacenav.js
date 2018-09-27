@@ -47,8 +47,11 @@ var SpaceNavigator = {
     fovEnabled:           { default: false },
     fovMin:               { default: 2 },
     fovMax:               { default: 115 },
+	dominantAxis:		  { default: false },
+	requiredDominationRatio: { default: 0 },
 
     // Constants
+    maxRotationSensitivity:  { default: 0.20 },
     rotationSensitivity:  { default: 0.05 },
     movementEasing:       { default: 3 },
     movementAcceleration: { default: 700 },
@@ -116,14 +119,28 @@ var SpaceNavigator = {
       new iqwerty.toast.Toast(text)
       this.lastMessage = text
   },
+  
+  dominateAxis(spaceNavigator) {
+	  var d = this.getDominantAxis(spaceNavigator.axes)
+	  for (var i=0;i<spaceNavigator.axes.length; i++)
+		  if (i != d)
+			  spaceNavigator.axes[i] = 0	  
+  },
 
   /**
    * AFRAME specific: Called on each iteration of main render loop.
    */
-  tick: function (t, dt) {
-    this.updateRotation(dt)
-    this.updatePosition(dt)
-    this.updateButtonState()
+  tick: function (t, dt, updateMovement=true, updateRotation=true) {
+    var spaceNavigator = this.getSpaceNavigator()
+	
+	if (spaceNavigator) {
+		if (this.dominantAxis) {
+			this.dominateAxis(spaceNavigator)
+		}
+		this.updateRotation(dt,spaceNavigator)
+		this.updatePosition(dt,spaceNavigator)
+		this.updateButtonState(spaceNavigator)
+	}
     if (this.data.fovEnabled) this.updateFov(dt)
   },
 
@@ -134,11 +151,7 @@ var SpaceNavigator = {
     var time = performance.now()
     var dt = time - this._previousUpdate
     this._previousUpdate = time
-
-    if(updateRotation) this.updateRotation(dt)
-    if(updateMovement) this.updatePosition(dt)
-    this.updateButtonState()
-    if (this.data.fovEnabled) this.updateFov(dt)
+	this.tick(time, dt, updateMovement=updateMovement, updateRotation=updateRotation)
   },
 
   /*******************************************************************
@@ -204,8 +217,8 @@ var SpaceNavigator = {
 
   },
   
-  getBiggestAxis: function(nav) {
-      var biggest = -1
+  getDominantAxis: function(nav) {
+      var biggest = -100
       var axis = 0
       for (var i=0; i<nav.axes.length; i++) {
           a = Math.abs(nav.axes[i])
@@ -214,7 +227,21 @@ var SpaceNavigator = {
               biggest = a
           }
       }
-      return axis
+	  if (this.requiredDominationRatio>0) {
+		  t = 0;
+		  for (var i=0; i<nav.axes.length; i++) {
+			t += nav.axes[i]*nav.axes[i]
+		  }
+		  if (t * this.requiredDominationRatio*this.requiredDominationRatio <= nav.axes[axis]*nav.axes[axis]) {
+			  return axis
+		  }
+		  else {
+			  return -1
+		  }
+	  }
+	  else {
+		return axis
+	  }
   },
 
   getMovementVector: function (dt) {
@@ -250,7 +277,7 @@ var SpaceNavigator = {
    * Rotation
    */
 
-  updateRotation: function () {
+  updateRotation: function (dt,spaceNavigator) {
     if (this._updateRotation) return this._updateRotation();
 
     var initialRotation = new THREE.Quaternion(),
@@ -266,9 +293,7 @@ var SpaceNavigator = {
 
     this._updateRotation = function () {
 
-      var spaceNavigator = this.getSpaceNavigator()
-      
-      if (!this.data.lookEnabled || !spaceNavigator) return;
+      if (!this.data.lookEnabled) return;
       
       tCurrent = Date.now();
       if (this.el) {
@@ -320,7 +345,7 @@ var SpaceNavigator = {
       // and spaceNavigator hasn't moved, don't overwrite the existing rotation.
       if (tLastExternalActivity > tLastLocalActivity && !delta.lengthSq()) return
 
-      delta.multiplyScalar(this.data.rotationSensitivity)
+      delta.multiplyScalar(Math.min(this.data.maxRotationSensitivity,this.data.rotationSensitivity * dt * 30))
 
       var q = new THREE.Quaternion()
       q.setFromEuler(new THREE.Euler(delta.x,delta.y,delta.z))

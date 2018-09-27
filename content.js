@@ -155,7 +155,12 @@
         var nav = controls.getSpaceNavigator()
         if (!nav)
             return 
-        axis = controls.getBiggestAxis(nav)
+        axis = controls.getDominantAxis(nav)
+		if (axis < 0) {
+            lastModelAxis = -1
+            stopNudging()
+            return
+		}
         v = nav.axes[axis]
         if ( Math.abs(v) < (lastModelAxis == axis ? NUDGE_THRESHOLD_OFF : NUDGE_THRESHOLD_ON) ) {
             lastModelAxis = -1

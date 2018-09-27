@@ -7,7 +7,7 @@
   
   "options_ui": {
     "page": "options.html",
-    "open_in_tab": false
+    "open_in_tab": true
   },
 
   "icons": { "16": "icon16.png",
@@ -19,7 +19,7 @@
   ],
 		
   "content_scripts": [{
-    "js": ["inject.js"],
+    "js": ["optiondata.js", "inject.js"],
     "matches": ["https://www.tinkercad.com/things/*/edit*"]
   }],
 
@@ -27,6 +27,7 @@
     "content.js",
     "spacenav.js",
     "toast.js",
-	"options.js"
+	"options.js",
+	"optiondata.js"
   ]  
 }
