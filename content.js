@@ -365,8 +365,6 @@
 			controls.data.rotationSensitivity = 1.5 * opts.rotationSpeedMultiplier
 		if (opts.dominantAxis != undefined)
 			controls.data.dominantAxis = opts.dominantAxis
-		console.log(opts)
-		console.log(controls.data.dominantAxis)
 		if (opts.requiredDominationAngle != undefined)
 			controls.data.requiredDominationAngle = opts.requiredDominationAngle
 
