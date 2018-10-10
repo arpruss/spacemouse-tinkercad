@@ -61,6 +61,7 @@ var SpaceNavigator = {
     releaseDebounceCount: { default: 10 },
 	
 	axisMultiply:     { default: [1,1,1,1,1,1] },
+	axisMap:		  { default: [0,1,2,3,4,5] },
   },
 
   /**
