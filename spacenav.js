@@ -142,7 +142,7 @@ var SpaceNavigator = {
 		}
 		this.updateRotation(dt,axes)
 		this.updatePosition(dt,axes)
-		this.updateButtonState(spaceNavigator)
+		this.updateButtonState(spaceNavigator.buttons)
 	}
     if (this.data.fovEnabled) this.updateFov(dt)
   },
@@ -407,13 +407,12 @@ var SpaceNavigator = {
    * Button events
    */
 
-  updateButtonState: function () {
-    var spaceNavigator = this.getSpaceNavigator();
-    if (this.data.enabled && spaceNavigator) {
+  updateButtonState: function (buttons) {
+    if (this.data.enabled) {
 
       // Fire DOM events for button state changes.
-      for (var i = 0; i < spaceNavigator.buttons.length; i++) {
-        if (spaceNavigator.buttons[i].pressed) {
+      for (var i = 0; i < buttons.length; i++) {
+        if (buttons[i].pressed) {
 			this.releaseDebounceCount[i] = 0
 			if (!this.buttons[i]) {
 				var e = new Event('navigatorbuttondown')
@@ -422,7 +421,7 @@ var SpaceNavigator = {
 				window.dispatchEvent(e)
 				this.buttons[i] = true
 			}
-        } else if (!spaceNavigator.buttons[i].pressed && this.buttons[i]) {
+        } else if (!buttons[i].pressed && this.buttons[i]) {
             if (this.releaseDebounceCount[i] >= this.data.releaseDebounceCount) {
                 var e = new Event('navigatorbuttonup')
                 e.index = i
@@ -446,10 +445,18 @@ var SpaceNavigator = {
     }
   },
 
-  /*******************************************************************
-   * SpaceNavigator state
-   */
-
+  isSpaceNavigator: function(gamepad) {
+	  if (! gamepad || ! gamepad.id)
+		  return false
+	  var gamepadName = gamepad.id.toLowerCase()
+	  return (gamepadName.toLowerCase().indexOf('vendor: 046d') > -1 && gamepadName.toLowerCase().indexOf('product: c6'))
+		  || gamepadName.toLowerCase().indexOf('spacenavigator') > -1
+		  || gamepadName.toLowerCase().indexOf('space navigator') > -1
+		  || gamepadName.toLowerCase().indexOf('spacemouse') > -1
+		  || gamepadName.toLowerCase().indexOf('space mouse') > -1
+  },
+  
+  
   /**
    * Returns SpaceNavigator instance attached to the component. If connected,
    * a proxy-controls component may provide access to spaceNavigator input from a
@@ -460,53 +467,30 @@ var SpaceNavigator = {
   getSpaceNavigator: function () {
 
     var this_ = this
-    var proxyControls = this.el ? this.el.sceneEl.components['proxy-controls'] : null
+	
+	var nav = navigator.getGamepads()[this.spaceNavigatorId]
 
-    if (proxyControls) {
-
-      // use proxy space navigator
-      return proxyControls && proxyControls.isConnected() && proxyControls.getSpaceNavigator()
-
-    } else {
-      // use local space navigator
-
-      if (!navigator.getGamepads) {
-        console.error('Gamepad API is not supported on this browser. Please use Firefox or Chrome.')
-        return false
-      }
-
-	  var nav = navigator.getGamepads()[this.spaceNavigatorId]
-	  
-      if (nav === undefined) {
-        // find space navigator
-        var gamepadList = navigator.getGamepads()
+	if (nav === undefined) {
+		// find space navigator
+		var gamepadList = navigator.getGamepads()
 		for (var i = 0 ; i < gamepadList.length ; i++) {
-          var gamepadName = gamepadList[i] ? gamepadList[i].id : null
-          if (gamepadName &&
-            (
-              gamepadName.toLowerCase().indexOf('spacenavigator') > -1
-              || gamepadName.toLowerCase().indexOf('space navigator') > -1
-              || gamepadName.toLowerCase().indexOf('spacemouse') > -1
-              || gamepadName.toLowerCase().indexOf('space mouse') > -1
-              || (gamepadName.toLowerCase().indexOf('vendor: 046d') > -1 && gamepadName.toLowerCase().indexOf('product: c6'))
-            ) 
-          ) {
-            this.spaceNavigatorId = i
-			nav = gamepadList[i]
-			break
-          }
-        }
-      }
+			if (this.isSpaceNavigator(gamepadList[i])) {
+				this.spaceNavigatorId = i
+				nav = gamepadList[i]
+				break
+			}
+		}
+	}
 
-      if (! nav) {
-		  this.spaceNavigatorId = undefined
-          this.message("SpaceMouse not found. Plug it in and press some buttons.")
-		  return undefined
-      }
-	  this.message("SpaceMouse connected.")
-	  
-      return nav
-    }
+	if (! nav) {
+	  this.spaceNavigatorId = undefined
+	  this.message("SpaceMouse not found: Plug it in and press some buttons")
+	  return undefined
+	}
+	
+	this.message("SpaceMouse connected")
+
+	return nav
   },
 
   /**
