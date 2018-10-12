@@ -1,9 +1,9 @@
 {
   "manifest_version": 2,
  
-  "name": "Use SpaceMouse in TinkerCAD",
-  "version": "0.3.2",
-  "description": "Use SpaceMouse / SpaceNavigator devices in TinkerCAD. This script is unofficial and endorsed neither by Autodesk nor 3DConnexion.",
+  "name": "SpaceMouse in TinkerCAD",
+  "version": "0.4.0",
+  "description": "Use SpaceMouse / SpaceNavigator / Gamepad / Joystick in TinkerCAD. This script is unofficial and endorsed neither by Autodesk nor 3DConnexion.",
   
   "options_ui": {
     "page": "options.html",

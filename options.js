@@ -1,6 +1,11 @@
 var storage = chrome.storage.local
 var changed = false
 	
+function showHide() {
+	var generic = document.getElementById('generic')
+	document.getElementById('generic_setup').style.display = generic.checked ? "block" : "none"
+}
+	
 function loadOptions() {
 	storage.get(options, function(result) {
 		for (key in options) {
@@ -13,6 +18,7 @@ function loadOptions() {
 			else
 				e.value = result[key]
 		}
+		showHide()
 	})
 }
 
@@ -61,6 +67,7 @@ function defaults() {
             change()
         }
 	}
+	showHide()
 }
 
 document.addEventListener('DOMContentLoaded', loadOptions)
@@ -69,9 +76,11 @@ document.getElementById('save').addEventListener('click',
 document.getElementById('defaults').addEventListener('click',
     defaults)
 for (var key in options) {
-	console.log(key)
-	console.log(document.getElementById(key))
-    document.getElementById(key).addEventListener('change', function() { change() })
+    if (key == 'generic') {
+		document.getElementById(key).addEventListener('change', function() { change(); showHide() })
+	}
+	else
+		document.getElementById(key).addEventListener('change', function() { change() })
     document.getElementById(key).addEventListener('keyup', function() { change() })
     document.getElementById(key).addEventListener('paste', function() { change() })
 }

@@ -4,7 +4,7 @@
 </head>
 <body>
 <input type="checkbox" id="fly" checked="true"/> Fly instead of moving the scene<br/>
-<input type="checkbox" id="swapYZ" checked="true"/> Controller up/down moves in/out of the screen (i.e., swap Y and Z axes)<br/>
+<input type="checkbox" id="swapYZ" checked="true"/> Controller up/down moves in/out of the screen (=swap Y and Z axes)<br/>
 <input type="checkbox" id="dominantAxis" checked="false"/> Dominant axis mode<br/>
 Maximum dominant axis deviation angle: <input id="requiredDominationAngle" type="number" value="90" min="0" max="90"/><br/>
 Nudge rotation angle: <input id="nudgeAngle" type="number" value="22.5" min="0.1" max="180"/><br/>
@@ -116,7 +116,81 @@ Navigate positionally: <select id="navPositionally">
   <option value="12">button 13</option>
   <option value="13">button 14</option>
 </select><br/>
-
+<input type="checkbox" id="generic" checked="false"/> Use generic joystick<br/>
+<div id="generic_setup" style="display: none">
+X translate axis: <select id="translateX">
+  <option value="-1">none</option>
+  <option value="0">0</option>
+  <option value="1">1</option>
+  <option value="2">2</option>
+  <option value="3">3</option>
+  <option value="4">4</option>
+  <option value="5">5</option>
+  <option value="6">6</option>
+  <option value="7">7</option>
+</select>
+<input type="checkbox" id="translateXInvert" checked="false"/> invert<br/>
+Y translate axis: <select id="translateY">
+  <option value="-1">none</option>
+  <option value="0">0</option>
+  <option value="1">1</option>
+  <option value="2">2</option>
+  <option value="3">3</option>
+  <option value="4">4</option>
+  <option value="5">5</option>
+  <option value="6">6</option>
+  <option value="7">7</option>
+</select>
+<input type="checkbox" id="translateYInvert" checked="false"/> invert<br/>
+Z translate axis: <select id="translateZ">
+  <option value="-1">none</option>
+  <option value="0">0</option>
+  <option value="1">1</option>
+  <option value="2">2</option>
+  <option value="3">3</option>
+  <option value="4">4</option>
+  <option value="5">5</option>
+  <option value="6">6</option>
+  <option value="7">7</option>
+</select>
+<input type="checkbox" id="translateZInvert" checked="false"/> invert<br/>
+X rotate axis: <select id="rotateX">
+  <option value="-1">none</option>
+  <option value="0">0</option>
+  <option value="1">1</option>
+  <option value="2">2</option>
+  <option value="3">3</option>
+  <option value="4">4</option>
+  <option value="5">5</option>
+  <option value="6">6</option>
+  <option value="7">7</option>
+</select>
+<input type="checkbox" id="rotateXInvert" checked="false"/> invert<br/>
+Y rotate axis: <select id="rotateY">
+  <option value="-1">none</option>
+  <option value="0">0</option>
+  <option value="1">1</option>
+  <option value="2">2</option>
+  <option value="3">3</option>
+  <option value="4">4</option>
+  <option value="5">5</option>
+  <option value="6">6</option>
+  <option value="7">7</option>
+</select>
+<input type="checkbox" id="rotateYInvert" checked="false"/> invert<br/>
+Z rotate axis: <select id="rotateZ">
+  <option value="-1">none</option>
+  <option value="0">0</option>
+  <option value="1">1</option>
+  <option value="2">2</option>
+  <option value="3">3</option>
+  <option value="4">4</option>
+  <option value="5">5</option>
+  <option value="6">6</option>
+  <option value="7">7</option>
+</select>
+<input type="checkbox" id="rotateZInvert" checked="false"/> invert<br/>
+</div>
 <button id="save" disabled>Save</button> <button id="defaults">Defaults</button>
 <div id="message"></div>
 <script type="text/javascript" src="optiondata.js"></script>

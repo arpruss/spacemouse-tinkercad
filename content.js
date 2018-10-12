@@ -367,7 +367,19 @@
 			controls.data.dominantAxis = opts.dominantAxis
 		if (opts.requiredDominationAngle != undefined)
 			controls.data.requiredDominationAngle = opts.requiredDominationAngle
-
+		if (opts.generic) {
+			controls.data.genericJoystick = true
+			controls.data.axisPreMap = [parseInt(opts.translateX),parseInt(opts.translateY),parseInt(opts.translateZ),
+										parseInt(opts.rotateX),parseInt(opts.rotateY),parseInt(opts.rotateZ)]
+			var invs = [opts.translateXInvert, opts.translateYInvert, opts.translateZInvert, 
+						opts.rotateXInvert, opts.rotateYInvert, opts.rotateZInvert ]
+			for (var i=0;i<6;i++)
+				controls.data.axisPreMultiply[i] = invs[i] ? -1  : 1
+		}
+		else {
+			controls.data.genericJoystick = false
+		}
+			
         last = { 
             position: new THREE.Vector3(),
             look: new THREE.Vector3(),

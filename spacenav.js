@@ -49,6 +49,7 @@ var SpaceNavigator = {
     fovMax:               { default: 115 },
 	dominantAxis:		  { default: false },
 	requiredDominationAngle: { default: 90 },
+	genericJoystick:	  { default: false },
 
     // Constants
     rotationSensitivity:  { default: 1.5 },
@@ -62,6 +63,9 @@ var SpaceNavigator = {
 	
 	axisMultiply:     { default: [1,1,1,1,1,1] },
 	axisMap:		  { default: [0,1,2,3,4,5] },
+	axisPreMap:		  { default: [0,1,2,3,4,5] },
+	axisPreMultiply:  { default: [1,1,1,1,1,1] },
+	
   },
 
   /**
@@ -449,11 +453,25 @@ var SpaceNavigator = {
 	  if (! gamepad || ! gamepad.id)
 		  return false
 	  var gamepadName = gamepad.id.toLowerCase()
-	  return (gamepadName.toLowerCase().indexOf('vendor: 046d') > -1 && gamepadName.toLowerCase().indexOf('product: c6'))
+	  return this.data.genericJoystick ||
+		  (gamepadName.toLowerCase().indexOf('vendor: 046d') > -1 && gamepadName.toLowerCase().indexOf('product: c6'))
 		  || gamepadName.toLowerCase().indexOf('spacenavigator') > -1
 		  || gamepadName.toLowerCase().indexOf('space navigator') > -1
 		  || gamepadName.toLowerCase().indexOf('spacemouse') > -1
 		  || gamepadName.toLowerCase().indexOf('space mouse') > -1
+  },
+  
+  premapAxes: function(axes) {
+	  var out = [0,0,0,0,0,0]
+	  for (var i=0; i<6; i++) {
+		  if (this.data.axisPreMap[i] >= 0) {
+			  var v = axes[this.data.axisPreMap[i]]
+			  if (v != undefined) {
+				out[i] = this.data.axisPreMultiply[i] * v
+			  }
+		  }
+	  }
+	  return out
   },
   
   
@@ -484,13 +502,16 @@ var SpaceNavigator = {
 
 	if (! nav) {
 	  this.spaceNavigatorId = undefined
-	  this.message("SpaceMouse not found: Plug it in and press some buttons")
+	  if (this.data.genericJoystick) 
+		this.message("Joystick not found: Plug it in and press some buttons")
+      else
+		this.message("SpaceMouse not found: Plug it in and press some buttons")
 	  return undefined
 	}
 	
-	this.message("SpaceMouse connected")
+	this.message(this.data.genericJoystick ? "Joystick connected" : "SpaceMouse connected")
 
-	return nav
+	return { axes:this.premapAxes(nav.axes), buttons:nav.buttons }
   },
 
   /**
