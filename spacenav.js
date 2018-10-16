@@ -199,12 +199,12 @@ var SpaceNavigator = {
        */
 
       var xDelta = this.data.axisMultiply[0] * axes[this.data.axisMap[0]],
-          yDelta = this.data.axisMultiply[1] * -axes[this.data.axisMap[1]],
-          zDelta = this.data.axisMultiply[2] * axes[this.data.axisMap[2]]
+          yDelta = this.data.axisMultiply[1] * axes[this.data.axisMap[1]],
+          zDelta = -this.data.axisMultiply[2] * axes[this.data.axisMap[2]]
           
       velocity.x += xDelta * acceleration * dt / 1000
+      velocity.y += yDelta * acceleration * dt / 1000
       velocity.z += zDelta * acceleration * dt / 1000
-      velocity.y -= yDelta * acceleration * dt / 1000
     }
 
     var movementVector = this.getMovementVector(dt);
@@ -336,7 +336,7 @@ var SpaceNavigator = {
 
       var delta = new THREE.Vector3(this.data.axisMultiply[3] * axes[this.data.axisMap[3]], 
 							this.data.axisMultiply[4] * axes[this.data.axisMap[4]], 
-							this.data.axisMultiply[5] * axes[this.data.axisMap[5]])
+							-this.data.axisMultiply[5] * axes[this.data.axisMap[5]])
 
 
       if (delta.x < ROTATION_EPS && delta.x > -ROTATION_EPS) delta.z = 0

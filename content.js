@@ -184,11 +184,12 @@
             nudging = true
             tcApp._editor3DContent._editor3D.root.rec()
         }
+		
         if (axis < 3) {
-            if (axis==1) {
+            if (axis==2) {
                 var testVector = new THREE.Vector3(0,0,1)
                 testVector.applyQuaternion(controls.rotation)
-                if (testVector.y < 0)
+                if (testVector.z < 0)
                     s = -s
                 m.set(1, 0, 0, 0,
                       0, 1, 0, 0,
@@ -241,15 +242,6 @@
                 r.makeRotationX(angle)
             }
             else if (axis == 4) {
-                // z
-                var testVector = new THREE.Vector3(0,0,1)
-                testVector.applyQuaternion(controls.rotation)
-                if (testVector.y < 0)
-                    s = -s
-                var angle = s * nudgeAngle
-                r.makeRotationZ(angle)
-            }
-            else {
                 // y
                 var testVector = new THREE.Vector3(0,1,0)
                 testVector.applyQuaternion(controls.rotation)
@@ -257,6 +249,15 @@
                     s = -s
                 var angle = -s * nudgeAngle
                 r.makeRotationY(angle)
+            }
+            else {
+                // z
+                var testVector = new THREE.Vector3(0,0,1)
+                testVector.applyQuaternion(controls.rotation)
+                if (testVector.y < 0)
+                    s = -s
+                var angle = -s * nudgeAngle
+                r.makeRotationZ(angle)
             }
 
             // todo: cleanup
@@ -338,7 +339,7 @@
 		if (opts.nudgeAngle != undefined) 
 			NUDGE_ANGLE = opts.nudgeAngle / 180. * Math.PI
 		if (opts.fly) 
-			controls.data.axisMultiply = [-1,1,-1,-1,-1,-1]
+			controls.data.axisMultiply = [-1,-1,-1,-1,-1,-1]
 		else
 			controls.data.axisMultiply = [1,1,1,1,1,1]
 		if (opts.swapYZ === undefined || opts.swapYZ) {
