@@ -344,8 +344,8 @@
 			controls.data.axisMultiply = [1,1,1,1,1,1]
 		if (opts.swapYZ === undefined || opts.swapYZ) {
 			controls.data.axisMap = [0,2,1,3,5,4]
-			if (opts.fly)
-				controls.data.axisMultiply[1] = -controls.data.axisMultiply[1]
+            controls.data.axisMultiply[2] = -controls.data.axisMultiply[2]
+            controls.data.axisMultiply[5] = -controls.data.axisMultiply[5]
 		}
 		else {
 			controls.data.axisMap = [0,1,2,3,4,5]
