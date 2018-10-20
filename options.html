@@ -5,7 +5,14 @@
 <body>
 <input type="checkbox" id="fly" checked="true"/> Fly instead of moving the scene<br/>
 <input type="checkbox" id="swapYZ" checked="true"/> Controller forward/back moves in/out of the screen (=swap Y and Z axes)<br/>
-<input type="checkbox" id="dominantAxis" checked="false"/> Dominant axis mode<br/>
+Dominance mode: <select id="dominance">
+  <option value="none">All axes always active</option>
+  <option value="3plus3">Rotation vs. translation dominance</option>
+  <option value="axis">Individual dominant axis</option>
+</select><br/>
+<div id="dominant3Plus3Mode_options" style="display: none">
+Rotation vs. translation dominance ratio: <input id="dominant3Plus3Ratio" type="number" value="0.5" min="0.01" max="1"/><br/>
+</div>
 Maximum dominant axis deviation angle: <input id="requiredDominationAngle" type="number" value="90" min="0" max="90"/><br/>
 Nudge rotation angle: <input id="nudgeAngle" type="number" value="22.5" min="0.1" max="180"/><br/>
 Nudge first repeat time (milliseconds): <input id="nudgeFirstRepeat" type="number" value="250" min="0" max="4000"/><br/>
@@ -30,6 +37,7 @@ Fit object to screen: <select id="fit">
   <option value="11">button 12</option>
   <option value="12">button 13</option>
   <option value="13">button 14</option>
+  <option value="14">button 15</option>
 </select><br/>
 Home display: <select id="home">
   <option value="none">None</option>
@@ -47,6 +55,7 @@ Home display: <select id="home">
   <option value="11">button 12</option>
   <option value="12">button 13</option>
   <option value="13">button 14</option>
+  <option value="14">button 15</option>
 </select><br/>
 Fine-control object nudging: <select id="fineNudge">
   <option value="none">None</option>
@@ -64,6 +73,7 @@ Fine-control object nudging: <select id="fineNudge">
   <option value="11">button 12</option>
   <option value="12">button 13</option>
   <option value="13">button 14</option>
+  <option value="14">button 15</option>
 </select><br/>
 Navigate despite selection: <select id="navSelection">
   <option value="none">None</option>
@@ -81,6 +91,7 @@ Navigate despite selection: <select id="navSelection">
   <option value="11">button 12</option>
   <option value="12">button 13</option>
   <option value="13">button 14</option>
+  <option value="14">button 15</option>
 </select><br/>
 Navigate rotationally: <select id="navRotationally">
   <option value="none">None</option>
@@ -98,6 +109,7 @@ Navigate rotationally: <select id="navRotationally">
   <option value="11">button 12</option>
   <option value="12">button 13</option>
   <option value="13">button 14</option>
+  <option value="14">button 15</option>
 </select><br/>
 Navigate positionally: <select id="navPositionally">
   <option value="none">None</option>
@@ -115,6 +127,7 @@ Navigate positionally: <select id="navPositionally">
   <option value="11">button 12</option>
   <option value="12">button 13</option>
   <option value="13">button 14</option>
+  <option value="14">button 15</option>
 </select><br/>
 <input type="checkbox" id="generic" checked="false"/> Use generic joystick<br/>
 <div id="generic_setup" style="display: none">

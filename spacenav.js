@@ -48,7 +48,9 @@ var SpaceNavigator = {
     fovMin:               { default: 2 },
     fovMax:               { default: 115 },
 	dominantAxis:		  { default: false },
+    dominant3Plus3:       { default: false },
 	requiredDominationAngle: { default: 90 },
+	dominant3Plus3Ratio:   { default: 0.5 },
 	genericJoystick:	  { default: false },
 
     // Constants
@@ -87,6 +89,7 @@ var SpaceNavigator = {
     // Rotation
     this.rotation = new THREE.Quaternion()
 	this.dominationRatioSquared = this.data.requiredDominationAngle >= 90 ? 0 : Math.cos(DEG_TO_RAD * this.data.requiredDominationAngle)
+    this.domination3Plus3RatioSquared = this.data.dominant3Plus3Ratio * this.data.dominant3Plus3Ratio 
     
     // FOV
     this.fov = DEFAULT_FOV
@@ -133,6 +136,20 @@ var SpaceNavigator = {
 	  return newAxes 
   },
 
+  dominate3Plus3(axes) {
+      var t2 = axes[0]*axes[0]+axes[1]*axes[1]+axes[2]*axes[2]
+      var r2 = axes[3]*axes[3]+axes[4]*axes[4]+axes[5]*axes[5]
+      if (r2 <= this.domination3Plus3RatioSquared * t2) {
+          return [axes[0],axes[1],axes[2],0,0,0]
+      }
+      else if (t2 <= this.domination3Plus3RatioSquared * r2) {
+          return [0,0,0,axes[3],axes[4],axes[5]]
+      }
+      else {
+          return [0,0,0,0,0,0]
+      }
+  },
+
   /**
    * AFRAME specific: Called on each iteration of main render loop.
    */
@@ -141,6 +158,9 @@ var SpaceNavigator = {
 	
 	if (spaceNavigator) {
 		var axes = spaceNavigator.axes
+        if (this.data.dominant3Plus3) {
+            axes = this.dominate3Plus3(axes)
+        }
 		if (this.data.dominantAxis) {
 			axes = this.dominateAxis(axes)
 		}

@@ -4,6 +4,8 @@ var changed = false
 function showHide() {
 	var generic = document.getElementById('generic')
 	document.getElementById('generic_setup').style.display = generic.checked ? "block" : "none"
+    var d = document.getElementById('dominance').value
+	document.getElementById('dominant3Plus3Mode_options').style.display = d == '3plus3' ? "block" : "none"
 }
 	
 function loadOptions() {
@@ -76,7 +78,7 @@ document.getElementById('save').addEventListener('click',
 document.getElementById('defaults').addEventListener('click',
     defaults)
 for (var key in options) {
-    if (key == 'generic') {
+    if (key == 'generic' || key == 'dominance') {
 		document.getElementById(key).addEventListener('change', function() { change(); showHide() })
 	}
 	else

@@ -364,8 +364,16 @@
 			home = opts.home
 		if (opts.rotationSpeedMultiplier != undefined) 
 			controls.data.rotationSensitivity = 1.5 * opts.rotationSpeedMultiplier
-		if (opts.dominantAxis != undefined)
-			controls.data.dominantAxis = opts.dominantAxis
+		if (opts.dominance == "axis")
+			controls.data.dominantAxis = true
+        else
+            controls.data.dominantAxis = false
+        if (opts.dominance == "3plus3")
+            controls.data.dominant3Plus3 = true
+        else
+            controls.data.dominant3Plus3 = false
+        if (opts.dominant3Plus3Ratio != undefined)
+            dominant3Plus3Ratio = opts.dominant3Plus3Ratio
 		if (opts.requiredDominationAngle != undefined)
 			controls.data.requiredDominationAngle = opts.requiredDominationAngle
 		if (opts.generic) {
