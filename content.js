@@ -1,3 +1,5 @@
+var tcApp = window.adsk.TinkercadApplication;
+
 (function(){
     var EPS_SQUARED = Math.pow(1e-3,2)
     var BASE_ACCELERATION = 700
@@ -302,6 +304,7 @@
     }
     
     function multiIn(property, object) {
+        property = property.replace("tcApp.", "window.adsk.TinkercadApplication.")
         var parts = property.split(".")
         for (var i = 0 ; i < parts.length ; i++) {
             if (typeof object == "undefined")
@@ -416,6 +419,7 @@
     }
 
     function init() {
+        console.log("bb")
         if (!ready()) {
             setTimeout(init, 500)
             return
@@ -427,3 +431,4 @@
     
     init()
 })()
+console.log("aa")
