@@ -474,11 +474,12 @@ var SpaceNavigator = {
 		  return false
 	  var gamepadName = gamepad.id.toLowerCase()
 	  return this.data.genericJoystick ||
-		  (gamepadName.toLowerCase().indexOf('vendor: 046d') > -1 && gamepadName.toLowerCase().indexOf('product: c6'))
-		  || gamepadName.toLowerCase().indexOf('spacenavigator') > -1
-		  || gamepadName.toLowerCase().indexOf('space navigator') > -1
-		  || gamepadName.toLowerCase().indexOf('spacemouse') > -1
-		  || gamepadName.toLowerCase().indexOf('space mouse') > -1
+		  (gamepadName.indexOf('vendor: 046d') > -1 && gamepadName.indexOf('product: c6'))
+		  || (gamepadName.indexOf('vendor: 256f') > -1 && gamepadName.indexOf('product: c6'))
+		  || gamepadName.indexOf('spacenavigator') > -1
+		  || gamepadName.indexOf('space navigator') > -1
+		  || gamepadName.indexOf('spacemouse') > -1
+		  || gamepadName.indexOf('space mouse') > -1
   },
   
   premapAxes: function(axes) {
